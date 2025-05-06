@@ -1,20 +1,20 @@
 import React from "react";
 import { Link } from "wouter";
-import { ShieldIcon, UserIcon, WalletIcon, DollarIcon } from "@/components/ui/icons";
+import { IdentityIcon, ProfileIcon, WalletIcon, DollarIcon } from "@/components/ui/icons";
 
 const QuickLinks = () => {
   const quickLinks = [
     {
       title: "KYC Verification",
       description: "Complete your verification",
-      icon: <ShieldIcon className="h-5 w-5" />,
+      icon: <IdentityIcon className="h-5 w-5" />,
       color: "bg-primary text-primary-foreground",
       href: "/kyc"
     },
     {
       title: "Profile Settings",
       description: "Update your information",
-      icon: <UserIcon className="h-5 w-5" />,
+      icon: <ProfileIcon className="h-5 w-5" />,
       color: "bg-secondary text-secondary-foreground",
       href: "/profile"
     },

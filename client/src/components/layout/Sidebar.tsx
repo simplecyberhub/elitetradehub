@@ -3,14 +3,14 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import {
   DashboardIcon,
-  ChartIcon,
-  UsersIcon,
+  StockIcon,
+  CopyTradingIcon,
   WalletIcon,
   CurrencyIcon,
-  ShieldIcon,
-  UserIcon,
-  LogoutIcon,
-  TrendingUpIcon,
+  IdentityIcon,
+  ProfileIcon,
+  TransactionIcon,
+  InvestmentPlanIcon
 } from "@/components/ui/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -41,17 +41,17 @@ const Sidebar = () => {
         { 
           path: "/markets", 
           label: "Markets", 
-          icon: <ChartIcon className="w-5 h-5" />
+          icon: <StockIcon className="w-5 h-5" />
         },
         { 
           path: "/copy-trading", 
           label: "Copy Trading", 
-          icon: <UsersIcon className="w-5 h-5" />
+          icon: <CopyTradingIcon className="w-5 h-5" />
         },
         { 
           path: "/investments", 
           label: "Investment Plans", 
-          icon: <TrendingUpIcon className="w-5 h-5" />
+          icon: <InvestmentPlanIcon className="w-5 h-5" />
         },
         { 
           path: "/deposit", 
@@ -66,7 +66,7 @@ const Sidebar = () => {
         { 
           path: "/transactions", 
           label: "Transactions", 
-          icon: <WalletIcon className="w-5 h-5 rotate-180" />
+          icon: <TransactionIcon className="w-5 h-5" />
         },
       ]
     },
@@ -76,12 +76,12 @@ const Sidebar = () => {
         { 
           path: "/profile", 
           label: "Profile", 
-          icon: <UserIcon className="w-5 h-5" />
+          icon: <ProfileIcon className="w-5 h-5" />
         },
         { 
           path: "/kyc", 
           label: "KYC Verification", 
-          icon: <ShieldIcon className="w-5 h-5" />
+          icon: <IdentityIcon className="w-5 h-5" />
         },
       ]
     }
@@ -96,7 +96,7 @@ const Sidebar = () => {
       <div className="p-4 flex justify-between items-center lg:block">
         <div className="flex items-center gap-2">
           <span className="text-primary text-2xl">
-            <TrendingUpIcon className="w-6 h-6" />
+            <StockIcon className="w-6 h-6" />
           </span>
           <h1 className="text-xl font-bold text-white">EliteStock</h1>
         </div>
@@ -150,7 +150,11 @@ const Sidebar = () => {
               onClick={logout}
               className="flex items-center gap-3 px-4 py-3 w-full text-left text-neutral-400 hover:bg-primary/20 transition-colors"
             >
-              <LogoutIcon className="w-5 h-5" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
               <span>Logout</span>
             </button>
           </div>
