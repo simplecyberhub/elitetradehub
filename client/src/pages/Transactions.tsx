@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Helmet } from "react-helmet";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { fetchUserTransactions } from "@/lib/api";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Table,
   TableBody,
@@ -33,18 +33,16 @@ const Transactions = () => {
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   
-  const { data: transactions, isLoading } = useQuery({
+  const { data: transactions = [], isLoading } = useQuery<any[]>({
     queryKey: [`/api/user/${user?.id}/transactions`],
     enabled: !!user?.id,
   });
   
   // Filter transactions by type
-  const filteredTransactions = transactions
-    ? transactions.filter((transaction: any) => {
-        if (filter === "all") return true;
-        return transaction.type.toLowerCase() === filter.toLowerCase();
-      })
-    : [];
+  const filteredTransactions = transactions.filter((transaction: any) => {
+    if (filter === "all") return true;
+    return transaction.type.toLowerCase() === filter.toLowerCase();
+  });
   
   // Search functionality
   const searchedTransactions = filteredTransactions.filter((transaction: any) => {

@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { createTrade } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -18,27 +18,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { useLocation } from "wouter";
-
-// Define order form schema
-const orderFormSchema = z.object({
-  type: z.enum(["buy", "sell"]),
-  amount: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number()
-      .positive("Amount must be positive")
-      .min(0.0001, "Minimum amount is 0.0001")
-  ),
-  price: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number()
-      .positive("Price must be positive")
-  ),
-});
-
-type OrderFormValues = z.infer<typeof orderFormSchema>;
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 interface OrderFormProps {
   asset: any;
@@ -47,290 +36,257 @@ interface OrderFormProps {
 const OrderForm: React.FC<OrderFormProps> = ({ asset }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [, setLocation] = useLocation();
-  const [orderType, setOrderType] = useState<"buy" | "sell">("buy");
-  const [total, setTotal] = useState(0);
+  const [orderType, setOrderType] = useState("market");
   
-  const form = useForm<OrderFormValues>({
-    resolver: zodResolver(orderFormSchema),
+  // Form schema for validation
+  const formSchema = z.object({
+    amount: z.string()
+      .min(1, "Amount is required")
+      .refine((val) => !isNaN(parseFloat(val)), {
+        message: "Amount must be a number",
+      })
+      .refine((val) => parseFloat(val) > 0, {
+        message: "Amount must be greater than 0",
+      })
+      .refine((val) => parseFloat(val) <= parseFloat(user?.balance || "0"), {
+        message: "Insufficient balance",
+      }),
+    direction: z.enum(["buy", "sell"]),
+    orderType: z.enum(["market", "limit"]),
+    limitPrice: z.string().optional(),
+  })
+  // Add conditional validation for limit orders
+  .refine((data) => {
+    if (data.orderType === "limit" && (!data.limitPrice || isNaN(parseFloat(data.limitPrice || "")))) {
+      return false;
+    }
+    return true;
+  }, {
+    message: "Limit price is required for limit orders",
+    path: ["limitPrice"],
+  });
+
+  // Form initialization
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      type: "buy",
-      amount: 0,
-      price: asset ? parseFloat(asset.price) : 0,
+      amount: "",
+      direction: "buy",
+      orderType: "market",
+      limitPrice: "",
     },
   });
   
-  // Update the form price when the asset changes
-  useEffect(() => {
-    if (asset) {
-      form.setValue("price", parseFloat(asset.price));
-    }
-  }, [asset, form]);
-  
-  // Calculate total when amount or price changes
-  useEffect(() => {
-    const amount = form.watch("amount") || 0;
-    const price = form.watch("price") || 0;
-    setTotal(amount * price);
-  }, [form.watch("amount"), form.watch("price")]);
-
-  const tradeMutation = useMutation({
-    mutationFn: (data: any) => createTrade(data),
+  // Trade execution mutation
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      const payload = {
+        userId: user?.id,
+        assetId: asset.id,
+        assetSymbol: asset.symbol,
+        amount: values.amount,
+        price: values.orderType === "market" ? asset.price : values.limitPrice,
+        type: values.orderType,
+        direction: values.direction,
+        status: values.orderType === "market" ? "completed" : "pending",
+      };
+      
+      return await apiRequest("POST", "/api/trades", payload);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/user/${user?.id}/trades`] });
-      // Invalidate user balance
-      queryClient.invalidateQueries({ queryKey: [`/api/user/${user?.id}`] });
-      setIsSuccess(true);
       toast({
-        title: `${orderType.toUpperCase()} order executed`,
-        description: `Your ${orderType} order has been successfully executed.`,
+        title: "Order executed",
+        description: "Your order has been successfully placed.",
+      });
+      
+      form.reset({
+        amount: "",
+        direction: "buy",
+        orderType: "market",
+        limitPrice: "",
       });
     },
     onError: (error) => {
       toast({
         variant: "destructive",
-        title: "Order failed",
-        description: "There was an error executing your order. Please try again.",
+        title: "Failed to place order",
+        description: "Please try again later or contact support if the issue persists.",
       });
     },
   });
-
-  const onSubmit = (values: OrderFormValues) => {
-    if (!user || !asset) return;
-    
-    // Check if user has enough balance for buy orders
-    if (values.type === "buy") {
-      const totalCost = values.amount * values.price;
-      if (totalCost > parseFloat(user.balance)) {
-        toast({
-          variant: "destructive",
-          title: "Insufficient balance",
-          description: "You don't have enough balance to place this order.",
-        });
-        return;
-      }
-    }
-    
-    tradeMutation.mutate({
-      userId: user.id,
-      assetId: asset.id,
-      type: values.type,
-      amount: values.amount.toString(),
-      price: values.price.toString(),
-      status: "pending"
-    });
+  
+  // Form submission handler
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    mutate(values);
   };
-
-  if (isSuccess) {
-    return (
-      <Card className="bg-neutral-900 border-success/30">
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center text-center py-6">
-            <div className="h-16 w-16 rounded-full bg-success/20 text-success flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Order Executed Successfully</h3>
-            <p className="text-neutral-400 mb-6">
-              Your {orderType} order for {form.getValues().amount} {asset.symbol} at ${form.getValues().price} has been executed.
-            </p>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setIsSuccess(false)}>
-                Place Another Order
-              </Button>
-              <Button onClick={() => setLocation("/")}>
-                Go to Dashboard
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  
+  // Calculate potential profit/loss
+  const calculatePotentialReturn = () => {
+    const amount = parseFloat(form.getValues("amount") || "0");
+    const direction = form.getValues("direction");
+    const price = parseFloat(asset.price);
+    
+    if (amount <= 0 || isNaN(amount)) return "$0.00";
+    
+    const estimatedChange = direction === "buy" 
+      ? (amount * 0.05) // Estimated 5% profit for buy
+      : (amount * 0.03); // Estimated 3% profit for sell
+    
+    return `$${estimatedChange.toFixed(2)}`;
+  };
+  
   return (
-    <div className="space-y-4">
-      <Tabs value={orderType} onValueChange={(value) => {
-        setOrderType(value as "buy" | "sell");
-        form.setValue("type", value as "buy" | "sell");
-      }}>
-        <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="buy" className="data-[state=active]:bg-success data-[state=active]:text-white">Buy</TabsTrigger>
-          <TabsTrigger value="sell" className="data-[state=active]:bg-destructive data-[state=active]:text-white">Sell</TabsTrigger>
-        </TabsList>
-
+    <Card className="bg-neutral-900 border-neutral-700">
+      <CardContent className="pt-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
-            <TabsContent value="buy" className="space-y-4">
-              <div className="bg-success/5 rounded-lg p-4 text-sm">
-                <p>You are about to place a BUY order for {asset?.symbol}</p>
-                <p className="mt-1 text-success">Available Balance: ${parseFloat(user?.balance || "0").toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="direction"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Direction</FormLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={field.value === "buy" ? "default" : "outline"}
+                      className={field.value === "buy" ? "bg-success hover:bg-success/90" : ""}
+                      onClick={() => form.setValue("direction", "buy")}
+                    >
+                      Buy
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={field.value === "sell" ? "default" : "outline"}
+                      className={field.value === "sell" ? "bg-destructive hover:bg-destructive/90" : ""}
+                      onClick={() => form.setValue("direction", "sell")}
+                    >
+                      Sell
+                    </Button>
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="orderType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Order Type</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setOrderType(value);
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-neutral-800 border-neutral-700">
+                        <SelectValue placeholder="Select order type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-neutral-800 border-neutral-700">
+                      <SelectItem value="market">Market Order</SelectItem>
+                      <SelectItem value="limit">Limit Order</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {field.value === "market" 
+                      ? "Execute immediately at current market price"
+                      : "Execute only when the price reaches your specified limit"}
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+            
+            {orderType === "limit" && (
+              <FormField
+                control={form.control}
+                name="limitPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Limit Price</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">$</span>
+                        <Input
+                          placeholder="0.00"
+                          className="bg-neutral-800 border-neutral-700 pl-7"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount to invest</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">$</span>
+                      <Input
+                        placeholder="0.00"
+                        className="bg-neutral-800 border-neutral-700 pl-7"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Available balance: ${parseFloat(user?.balance || "0").toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="py-2 border-t border-neutral-700 space-y-2 mt-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-neutral-400">Current {asset.symbol} Price</span>
+                <span>${parseFloat(asset.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: asset.type === 'crypto' ? 6 : 2 })}</span>
               </div>
-
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount to Buy</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          step="0.0001"
-                          placeholder="0"
-                          {...field}
-                        />
-                        <div className="absolute inset-y-0 right-3 flex items-center">
-                          <span className="text-sm text-neutral-400">{asset?.type === "crypto" ? asset?.symbol.split('/')[0] : "shares"}</span>
-                        </div>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Enter the amount of {asset?.type === "crypto" ? asset?.symbol.split('/')[0] : "shares"} you want to buy
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price per {asset?.type === "crypto" ? asset?.symbol.split('/')[0] : "Share"}</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
-                        <Input
-                          type="number"
-                          step="0.0001"
-                          className="pl-8"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Current market price: ${parseFloat(asset?.price || "0").toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </TabsContent>
-
-            <TabsContent value="sell" className="space-y-4">
-              <div className="bg-destructive/5 rounded-lg p-4 text-sm">
-                <p>You are about to place a SELL order for {asset?.symbol}</p>
-                {/* In a real app, you would show the user's current holdings of this asset */}
-                <p className="mt-1 text-neutral-400">Note: This is a demo. In a real application, you would only be able to sell assets you own.</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-neutral-400">Fee</span>
+                <span>$0.00</span>
               </div>
-
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount to Sell</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          step="0.0001"
-                          placeholder="0"
-                          {...field}
-                        />
-                        <div className="absolute inset-y-0 right-3 flex items-center">
-                          <span className="text-sm text-neutral-400">{asset?.type === "crypto" ? asset?.symbol.split('/')[0] : "shares"}</span>
-                        </div>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Enter the amount of {asset?.type === "crypto" ? asset?.symbol.split('/')[0] : "shares"} you want to sell
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price per {asset?.type === "crypto" ? asset?.symbol.split('/')[0] : "Share"}</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
-                        <Input
-                          type="number"
-                          step="0.0001"
-                          className="pl-8"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Current market price: ${parseFloat(asset?.price || "0").toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </TabsContent>
-
-            <div className="bg-neutral-900 rounded-lg p-4">
-              <h3 className="font-medium mb-3">Order Summary</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-neutral-400">Order Type</span>
-                  <span className={orderType === "buy" ? "text-success" : "text-destructive"}>
-                    {orderType.toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-400">Asset</span>
-                  <span>{asset?.symbol}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-400">Amount</span>
-                  <span>{form.watch("amount") || 0} {asset?.type === "crypto" ? asset?.symbol.split('/')[0] : "shares"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-400">Price</span>
-                  <span>${form.watch("price") || 0}</span>
-                </div>
-                <div className="flex justify-between font-medium">
-                  <span>Total</span>
-                  <span>${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-neutral-400">Potential Return (est.)</span>
+                <span className="text-success">{calculatePotentialReturn()}</span>
               </div>
             </div>
-
+            
             <Button 
               type="submit" 
-              className={`w-full ${orderType === "buy" ? "bg-success hover:bg-success/90" : "bg-destructive hover:bg-destructive/90"}`}
-              disabled={tradeMutation.isPending}
+              className={`w-full ${
+                form.getValues("direction") === "buy" 
+                  ? "bg-success hover:bg-success/90" 
+                  : "bg-destructive hover:bg-destructive/90"
+              }`}
+              disabled={isPending}
             >
-              {tradeMutation.isPending ? (
-                <>
+              {isPending ? (
+                <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Processing...
-                </>
+                </span>
               ) : (
-                `${orderType === "buy" ? "Buy" : "Sell"} ${asset?.symbol}`
+                `${form.getValues("direction") === "buy" ? "Buy" : "Sell"} ${asset.symbol}`
               )}
             </Button>
           </form>
         </Form>
-      </Tabs>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
