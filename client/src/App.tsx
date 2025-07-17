@@ -118,17 +118,42 @@ function LoginForm() {
   );
 }
 
-function App() {
+function AppRouter() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
+        <LoginForm />
+      </div>
+    );
+  }
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Router />
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <div className="min-h-screen bg-neutral-900 text-white">
+      <Header />
+      <main className="flex-1">
+        <Route path="/admin">
+          {() => user?.role === 'admin' ? <lazy(() => import("./pages/AdminDashboard")) /> : <Dashboard />}
+        </Route>
+        <Route path="/" component={Dashboard} />
+        <Route component={NotFound} />
+      </main>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Router>
+            <AppRouter />
+          </Router>
+        </TooltipProvider>
+      </QueryClientProvider>
+      <Toaster />
+    </AuthProvider>
+  );
+}

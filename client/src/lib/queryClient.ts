@@ -12,9 +12,21 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Get user from localStorage to include auth headers
+  const user = localStorage.getItem("user");
+  const userData = user ? JSON.parse(user) : null;
+  
+  const headers: Record<string, string> = {
+    ...(data ? { "Content-Type": "application/json" } : {}),
+    ...(userData ? { 
+      "x-user-id": userData.id.toString(),
+      "x-user-role": userData.role 
+    } : {})
+  };
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -29,7 +41,19 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get user from localStorage to include auth headers
+    const user = localStorage.getItem("user");
+    const userData = user ? JSON.parse(user) : null;
+    
+    const headers: Record<string, string> = {
+      ...(userData ? { 
+        "x-user-id": userData.id.toString(),
+        "x-user-role": userData.role 
+      } : {})
+    };
+
     const res = await fetch(queryKey[0] as string, {
+      headers,
       credentials: "include",
     });
 
