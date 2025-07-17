@@ -61,6 +61,11 @@ const Header = () => {
               </svg>
             </a>
           </Link>
+          {user.role === 'admin' && (
+            <Link href="/admin">
+              <a className="text-sm text-blue-500">Admin Dashboard</a>
+            </Link>
+          )}
         </div>
       </div>
     </header>

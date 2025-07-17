@@ -413,4 +413,17 @@ export class DbStorage implements IStorage {
     const result = await this.db.delete(watchlistItems).where(eq(watchlistItems.id, id));
     return result.rowCount > 0;
   }
+
+  // Admin operations
+  async getAllUsers(): Promise<User[]> {
+    return await this.db.select().from(users);
+  }
+
+  async getAllKycDocuments(): Promise<KycDocument[]> {
+    return await this.db.select().from(kycDocuments);
+  }
+
+  async getAllTrades(): Promise<Trade[]> {
+    return await this.db.select().from(trades);
+  }
 }

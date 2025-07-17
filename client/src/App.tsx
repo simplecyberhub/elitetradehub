@@ -18,6 +18,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAuth, AuthProvider } from "./context/AuthContext";
+import { lazy } from 'react';
 
 function Router() {
   const { user } = useAuth();
@@ -44,10 +45,9 @@ function Router() {
             <Route path="/investments" component={InvestmentPlansPage} />
             <Route path="/deposit" component={Deposit} />
             <Route path="/withdraw" component={Withdraw} />
-            <Route path="/kyc" component={KycVerification} />
-            <Route path="/order/:id" component={OrderExecution} />
             <Route path="/profile" component={Profile} />
-            <Route path="/transactions" component={Transactions} />
+            <Route path="/kyc-verification" component={KycVerification} />
+            <Route path="/admin" component={lazy(() => import("./pages/AdminDashboard"))} />
             <Route component={NotFound} />
           </Switch>
         </div>
@@ -65,7 +65,7 @@ function LoginForm() {
     const formData = new FormData(e.target as HTMLFormElement);
     const username = formData.get("username") as string;
     const password = formData.get("password") as string;
-    
+
     login(username, password);
   };
 

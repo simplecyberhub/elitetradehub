@@ -9,7 +9,153 @@ import {
   insertWatchlistItemSchema
 } from "@shared/schema";
 
+// Middleware to check if user is authenticated and has required role
+function requireAuth(req: Request, res: Response, next: any) {
+  const userId = req.headers['x-user-id'];
+  if (!userId) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  req.userId = parseInt(userId as string);
+  next();
+}
+
+function requireAdmin(req: Request, res: Response, next: any) {
+  // In a real app, you'd verify the user's role from session/token
+  // For demo purposes, we'll check the user-role header
+  const userRole = req.headers['x-user-role'];
+  if (userRole !== 'admin') {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
+}
+
+// Extend Request interface to include userId
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: number;
+    }
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Admin routes
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const users = allUsers.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.status(200).json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, updates);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.get("/api/admin/kyc-documents", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const allDocuments = await storage.getAllKycDocuments();
+      const documents = await Promise.all(allDocuments.map(async (doc) => {
+        const user = await storage.getUser(doc.userId);
+        const { password, ...userWithoutPassword } = user || {};
+        return {
+          ...doc,
+          user: userWithoutPassword
+        };
+      }));
+      
+      res.status(200).json(documents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get KYC documents" });
+    }
+  });
+
+  app.patch("/api/admin/kyc-documents/:id", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const docId = parseInt(req.params.id);
+      const { verificationStatus, rejectionReason } = req.body;
+      
+      const updatedDoc = await storage.updateKycDocument(docId, {
+        verificationStatus,
+        rejectionReason
+      });
+      
+      if (!updatedDoc) {
+        return res.status(404).json({ message: "KYC document not found" });
+      }
+      
+      res.status(200).json(updatedDoc);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update KYC document" });
+    }
+  });
+
+  app.get("/api/admin/stats", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const allTrades = await storage.getAllTrades();
+      const allDocuments = await storage.getAllKycDocuments();
+      
+      const totalUsers = allUsers.length;
+      const totalTrades = allTrades.length;
+      const totalInvestments = 0; // Placeholder, would need getAllInvestments method
+      const pendingKyc = allDocuments.filter(doc => doc.verificationStatus === 'pending').length;
+      
+      res.status(200).json({
+        totalUsers,
+        totalTrades,
+        totalInvestments,
+        pendingKyc
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get admin stats" });
+    }
+  });
+
+  app.get("/api/admin/trades", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const allTrades = await storage.getAllTrades();
+      const trades = await Promise.all(allTrades.map(async (trade) => {
+        const user = await storage.getUser(trade.userId);
+        const asset = await storage.getAsset(trade.assetId);
+        const { password, ...userWithoutPassword } = user || {};
+        
+        return {
+          ...trade,
+          user: userWithoutPassword,
+          asset
+        };
+      }));
+      
+      // Sort by creation date (newest first)
+      trades.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      res.status(200).json(trades);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get trades" });
+    }
+  });
+
   // User routes
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {

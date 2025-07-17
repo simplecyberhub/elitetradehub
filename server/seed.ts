@@ -6,6 +6,17 @@ export async function seedDatabase(storage: DbStorage) {
   console.log("Seeding database...");
 
   try {
+    // Create admin user
+    const adminUser: InsertUser = {
+      username: "admin",
+      password: "admin123",
+      email: "admin@example.com",
+      fullName: "Administrator",
+    };
+    const admin = await storage.createUser(adminUser);
+    await storage.updateUser(admin.id, { role: "admin" });
+    console.log("Created admin user:", admin.username);
+
     // Create demo user
     const demoUser: InsertUser = {
       username: "demo",
