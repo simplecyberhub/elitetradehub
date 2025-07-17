@@ -1,3 +1,4 @@
+
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -18,44 +19,9 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAuth, AuthProvider } from "./context/AuthContext";
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
 
-function Router() {
-  const { user } = useAuth();
-
-  if (!user) {
-    // Simple login form while the user is not authenticated
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-neutral-900">
-        <LoginForm />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col lg:flex-row min-h-screen">
-      <Sidebar />
-      <main className="flex-1 lg:ml-64">
-        <Header />
-        <div className="p-4 lg:p-6">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/markets" component={Markets} />
-            <Route path="/copy-trading" component={CopyTradingPage} />
-            <Route path="/investments" component={InvestmentPlansPage} />
-            <Route path="/deposit" component={Deposit} />
-            <Route path="/withdraw" component={Withdraw} />
-            <Route path="/profile" component={Profile} />
-            <Route path="/kyc-verification" component={KycVerification} />
-            <Route path="/admin" component={lazy(() => import("./pages/AdminDashboard"))} />
-            <Route component={NotFound} />
-          </Switch>
-        </div>
-        <Footer />
-      </main>
-    </div>
-  );
-}
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 function LoginForm() {
   const { login } = useAuth();
@@ -112,32 +78,63 @@ function LoginForm() {
         </button>
       </form>
       <div className="mt-4 text-center text-sm text-muted-foreground">
-        <p>Use demo/password to log in</p>
+        <p>Use demo/password to log in or admin/admin123 for admin access</p>
       </div>
     </div>
   );
 }
 
-function AppRouter() {
+function AppContent() {
   const { user } = useAuth();
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen bg-neutral-900">
         <LoginForm />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-white">
-      <Header />
-      <main className="flex-1">
-        <Route path="/admin">
-          {() => user?.role === 'admin' ? <lazy(() => import("./pages/AdminDashboard")) /> : <Dashboard />}
-        </Route>
-        <Route path="/" component={Dashboard} />
-        <Route component={NotFound} />
+    <div className="flex flex-col lg:flex-row min-h-screen">
+      <Sidebar />
+      <main className="flex-1 lg:ml-64">
+        <Header />
+        <div className="p-4 lg:p-6">
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/markets" component={Markets} />
+            <Route path="/copy-trading" component={CopyTradingPage} />
+            <Route path="/investments" component={InvestmentPlansPage} />
+            <Route path="/deposit" component={Deposit} />
+            <Route path="/withdraw" component={Withdraw} />
+            <Route path="/profile" component={Profile} />
+            <Route path="/kyc-verification" component={KycVerification} />
+            <Route path="/transactions" component={Transactions} />
+            <Route path="/admin">
+              {() => {
+                if (user?.role === 'admin') {
+                  return (
+                    <Suspense fallback={
+                      <div className="flex justify-center py-12">
+                        <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    }>
+                      <AdminDashboard />
+                    </Suspense>
+                  );
+                } else {
+                  return <Dashboard />;
+                }
+              }}
+            </Route>
+            <Route component={NotFound} />
+          </Switch>
+        </div>
+        <Footer />
       </main>
     </div>
   );
@@ -148,12 +145,10 @@ export default function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Router>
-            <AppRouter />
-          </Router>
+          <AppContent />
+          <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
-      <Toaster />
     </AuthProvider>
   );
 }
