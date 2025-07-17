@@ -435,15 +435,15 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-neutral-400">Amount</span>
-              <span>${form.watch("amount") || 0}</span>
+              <span>${parseFloat(form.watch("amount")?.toString() || "0").toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-neutral-400">Fee</span>
               <span>
                 {method === "credit_card"
-                  ? `$${((Number(form.watch("amount")) || 0) * 0.015).toFixed(2)} (1.5%)`
+                  ? `$${((parseFloat(form.watch("amount")?.toString() || "0")) * 0.015).toFixed(2)} (1.5%)`
                   : method === "paypal"
-                  ? `$${((Number(form.watch("amount")) || 0) * 0.025).toFixed(2)} (2.5%)`
+                  ? `$${((parseFloat(form.watch("amount")?.toString() || "0")) * 0.025).toFixed(2)} (2.5%)`
                   : "$0.00"}
               </span>
             </div>
@@ -451,10 +451,10 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
               <span>Total</span>
               <span>
                 ${method === "credit_card"
-                  ? ((Number(form.watch("amount")) || 0) * 1.015).toFixed(2)
+                  ? ((parseFloat(form.watch("amount")?.toString() || "0")) * 1.015).toFixed(2)
                   : method === "paypal"
-                  ? ((Number(form.watch("amount")) || 0) * 1.025).toFixed(2)
-                  : (Number(form.watch("amount")) || 0).toFixed(2)}
+                  ? ((parseFloat(form.watch("amount")?.toString() || "0")) * 1.025).toFixed(2)
+                  : (parseFloat(form.watch("amount")?.toString() || "0")).toFixed(2)}
               </span>
             </div>
           </div>

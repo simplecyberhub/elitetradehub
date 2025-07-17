@@ -62,16 +62,7 @@ export default function Sidebar() {
                 const isActive = location === item.href;
                 return (
                   <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                        isActive
-                          ? "bg-blue-600 text-white"
-                          : "text-neutral-300 hover:text-white hover:bg-neutral-800"
-                      )}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
+                    <Link href={item.href} className="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
                       <item.icon className="mr-3 h-5 w-5" />
                       {item.name}
                     </Link>

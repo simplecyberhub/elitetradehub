@@ -32,7 +32,7 @@ const Header = () => {
             <SearchIcon className="absolute left-3 top-2.5 text-neutral-400 w-4 h-4" />
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center bg-neutral-700 rounded-md px-3 py-1.5">
             <span className="text-sm font-medium mr-2">Market Status:</span>
@@ -41,12 +41,12 @@ const Header = () => {
               Open
             </span>
           </div>
-          
+
           <button className="relative text-neutral-400 hover:text-white">
             <BellIcon className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
           </button>
-          
+
           <Link href="/profile">
             <a className="flex items-center gap-2 cursor-pointer hover:bg-neutral-700 p-1.5 rounded-md">
               <Avatar className="h-8 w-8 bg-primary">

@@ -24,7 +24,7 @@ const InvestmentPlansPage = () => {
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [investmentAmount, setInvestmentAmount] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   // Parse plan ID from URL if present
   useEffect(() => {
     const params = new URLSearchParams(location.split('?')[1]);
@@ -38,16 +38,16 @@ const InvestmentPlansPage = () => {
       }
     }
   }, [location, plans]);
-  
+
   const { data: plans, isLoading: isLoadingPlans } = useQuery({
     queryKey: ["/api/investment-plans"],
   });
-  
+
   const { data: userInvestments, isLoading: isLoadingInvestments } = useQuery({
     queryKey: [`/api/user/${user?.id}/investments`],
     enabled: !!user?.id
   });
-  
+
   const investMutation = useMutation({
     mutationFn: (data: any) => createInvestment(data),
     onSuccess: () => {
@@ -67,29 +67,29 @@ const InvestmentPlansPage = () => {
       });
     }
   });
-  
+
   // Format number with commas
   const formatNumber = (num: number | string) => {
     return parseFloat(num.toString()).toLocaleString('en-US');
   };
-  
+
   // Handle invest button click
   const handleInvestClick = (plan: any) => {
     if (!user) return;
-    
+
     setSelectedPlan(plan);
     setInvestmentAmount(plan.minAmount);
     setIsDialogOpen(true);
   };
-  
+
   // Handle investment submission
   const handleInvestSubmit = () => {
     if (!user || !selectedPlan) return;
-    
+
     const amount = parseFloat(investmentAmount);
     const minAmount = parseFloat(selectedPlan.minAmount);
     const maxAmount = selectedPlan.maxAmount ? parseFloat(selectedPlan.maxAmount) : Infinity;
-    
+
     // Validate amount
     if (isNaN(amount) || amount < minAmount) {
       toast({
@@ -99,7 +99,7 @@ const InvestmentPlansPage = () => {
       });
       return;
     }
-    
+
     if (maxAmount !== 0 && amount > maxAmount) {
       toast({
         variant: "destructive",
@@ -108,7 +108,7 @@ const InvestmentPlansPage = () => {
       });
       return;
     }
-    
+
     // Validate user balance
     const balance = parseFloat(user.balance);
     if (amount > balance) {
@@ -119,12 +119,12 @@ const InvestmentPlansPage = () => {
       });
       return;
     }
-    
+
     // Calculate start and end dates
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + selectedPlan.lockPeriodDays);
-    
+
     // Create investment
     investMutation.mutate({
       userId: user.id,
@@ -135,24 +135,24 @@ const InvestmentPlansPage = () => {
       endDate: endDate.toISOString()
     });
   };
-  
+
   return (
     <>
       <Helmet>
         <title>Investment Plans | EliteStock Trading Platform</title>
         <meta name="description" content="Invest in our curated investment plans with competitive returns. Choose from Starter, Premium, and Elite plans on EliteStock Trading Platform." />
       </Helmet>
-      
+
       <div>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Investment Plans</h1>
           <p className="text-neutral-400">Invest in our curated plans with competitive returns</p>
         </div>
-        
+
         {/* Investment Plans */}
         <div className="bg-neutral-800 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-6">Available Plans</h2>
-          
+
           {isLoadingPlans ? (
             <div className="flex justify-center py-8">
               <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -164,7 +164,7 @@ const InvestmentPlansPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {plans?.map((plan: any, index: number) => {
                 const isPremium = plan.name === "Premium";
-                
+
                 return (
                   <div
                     key={plan.id}
@@ -189,7 +189,7 @@ const InvestmentPlansPage = () => {
                         : "+"}
                     </p>
                     <p className="text-sm text-neutral-400 mb-4">Minimum investment</p>
-                    
+
                     <div className="mb-6">
                       <div className="flex justify-between mb-2">
                         <span className="text-sm">Monthly ROI</span>
@@ -202,7 +202,7 @@ const InvestmentPlansPage = () => {
                         ></div>
                       </div>
                     </div>
-                    
+
                     <ul className="space-y-3 mb-6">
                       {plan.features.map((feature: string, i: number) => (
                         <li key={i} className="flex items-center text-sm">
@@ -213,14 +213,14 @@ const InvestmentPlansPage = () => {
                         </li>
                       ))}
                     </ul>
-                    
+
                     <Button 
                       className={`w-full ${isPremium ? "bg-primary hover:bg-primary/90" : ""}`}
                       onClick={() => handleInvestClick(plan)}
                     >
                       Invest Now
                     </Button>
-                    
+
                     <p className="text-xs text-neutral-400 text-center mt-4">
                       {plan.lockPeriodDays}-day lock period applies
                     </p>
@@ -230,11 +230,11 @@ const InvestmentPlansPage = () => {
             </div>
           )}
         </div>
-        
+
         {/* User's Active Investments */}
         <div className="bg-neutral-800 rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-6">Your Investments</h2>
-          
+
           {isLoadingInvestments ? (
             <div className="flex justify-center py-8">
               <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -260,7 +260,7 @@ const InvestmentPlansPage = () => {
                     const startDate = new Date(investment.startDate);
                     const endDate = new Date(investment.endDate);
                     const isActive = investment.status === "active";
-                    
+
                     return (
                       <tr key={investment.id} className="border-b border-neutral-700">
                         <td className="py-4">{investment.plan.name}</td>
@@ -293,7 +293,7 @@ const InvestmentPlansPage = () => {
             </div>
           )}
         </div>
-        
+
         {/* Investment Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
@@ -303,7 +303,7 @@ const InvestmentPlansPage = () => {
                 Enter the amount you want to invest
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="py-4">
               <div className="mb-4">
                 <p className="text-sm font-medium mb-1">Investment Amount</p>
@@ -321,7 +321,7 @@ const InvestmentPlansPage = () => {
                   {selectedPlan?.maxAmount !== "0" && ` | Max: $${formatNumber(selectedPlan?.maxAmount || 0)}`}
                 </p>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Plan</span>
@@ -341,7 +341,7 @@ const InvestmentPlansPage = () => {
                 </div>
               </div>
             </div>
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
               <Button 
