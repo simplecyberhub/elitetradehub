@@ -106,7 +106,7 @@ const Markets = () => {
                       ))}
                     </div>
                     <div className="h-64">
-                      <MarketChart asset={selectedAsset} timeframe={timeframe} />
+                      <MarketChart assetId={selectedAsset?.id} symbol={selectedAsset?.symbol} />
                     </div>
                   </div>
                 </>
