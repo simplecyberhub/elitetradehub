@@ -68,9 +68,12 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
   });
 
   const depositMutation = useMutation({
-    mutationFn: (data: { userId: number; amount: number; method: string }) =>
-      createDeposit(data.userId, data.amount, data.method),
-    onSuccess: () => {
+    mutationFn: (data: { userId: number; amount: number; method: string }) => {
+      console.log("Creating deposit with data:", data);
+      return createDeposit(data.userId, data.amount, data.method);
+    },
+    onSuccess: (data) => {
+      console.log("Deposit successful:", data);
       queryClient.invalidateQueries({ queryKey: [`/api/user/${user?.id}/transactions`] });
       queryClient.invalidateQueries({ queryKey: [`/api/user/${user?.id}`] });
       setIsSuccess(true);
@@ -80,16 +83,26 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
       });
     },
     onError: (error) => {
+      console.error("Deposit error:", error);
       toast({
         variant: "destructive",
         title: "Deposit failed",
-        description: "There was an error processing your deposit. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error processing your deposit. Please try again.",
       });
     },
   });
 
   const onSubmit = (values: DepositFormValues) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Please log in to make a deposit.",
+      });
+      return;
+    }
+
+    console.log("Submitting deposit:", { userId: user.id, amount: values.amount, method });
 
     depositMutation.mutate({
       userId: user.id,
