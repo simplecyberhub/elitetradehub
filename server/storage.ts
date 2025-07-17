@@ -7,6 +7,7 @@ import {
   type Investment, type InsertInvestment, type Transaction, type InsertTransaction,
   type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem
 } from "@shared/schema";
+import { DbStorage } from "./db-storage";
 
 // Interface for storage operations
 export interface IStorage {
@@ -734,4 +735,28 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Create storage instance based on environment
+async function createStorage(): Promise<IStorage> {
+  if (process.env.DATABASE_URL) {
+    console.log("Using PostgreSQL database storage");
+    const dbStorage = new DbStorage(process.env.DATABASE_URL);
+    
+    // Check if database needs seeding (if no users exist)
+    try {
+      const existingUser = await dbStorage.getUserByUsername("demo");
+      if (!existingUser) {
+        const { seedDatabase } = await import("./seed");
+        await seedDatabase(dbStorage);
+      }
+    } catch (error) {
+      console.error("Error checking/seeding database:", error);
+    }
+    
+    return dbStorage;
+  } else {
+    console.log("Using in-memory storage (no DATABASE_URL found)");
+    return new MemStorage();
+  }
+}
+
+export const storage = await createStorage();
