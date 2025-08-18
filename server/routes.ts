@@ -39,10 +39,13 @@ declare global {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize storage
+  const storageInstance = await storage;
+  
   // Admin routes
   app.get("/api/admin/users", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
-      const allUsers = await storage.getAllUsers();
+      const allUsers = await storageInstance.getAllUsers();
       const users = allUsers.map(user => {
         const { password, ...userWithoutPassword } = user;
         return userWithoutPassword;
@@ -59,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       const updates = req.body;
       
-      const updatedUser = await storage.updateUser(userId, updates);
+      const updatedUser = await storageInstance.updateUser(userId, updates);
       
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
@@ -74,9 +77,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/kyc-documents", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
-      const allDocuments = await storage.getAllKycDocuments();
+      const allDocuments = await storageInstance.getAllKycDocuments();
       const documents = await Promise.all(allDocuments.map(async (doc) => {
-        const user = await storage.getUser(doc.userId);
+        const user = await storageInstance.getUser(doc.userId);
         const { password, ...userWithoutPassword } = user || {};
         return {
           ...doc,
@@ -95,7 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const docId = parseInt(req.params.id);
       const { verificationStatus, rejectionReason } = req.body;
       
-      const updatedDoc = await storage.updateKycDocument(docId, {
+      const updatedDoc = await storageInstance.updateKycDocument(docId, {
         verificationStatus,
         rejectionReason
       });
@@ -112,9 +115,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/stats", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
-      const allUsers = await storage.getAllUsers();
-      const allTrades = await storage.getAllTrades();
-      const allDocuments = await storage.getAllKycDocuments();
+      const allUsers = await storageInstance.getAllUsers();
+      const allTrades = await storageInstance.getAllTrades();
+      const allDocuments = await storageInstance.getAllKycDocuments();
       
       const totalUsers = allUsers.length;
       const totalTrades = allTrades.length;
@@ -134,10 +137,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/trades", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
-      const allTrades = await storage.getAllTrades();
+      const allTrades = await storageInstance.getAllTrades();
       const trades = await Promise.all(allTrades.map(async (trade) => {
-        const user = await storage.getUser(trade.userId);
-        const asset = await storage.getAsset(trade.assetId);
+        const user = await storageInstance.getUser(trade.userId);
+        const asset = await storageInstance.getAsset(trade.assetId);
         const { password, ...userWithoutPassword } = user || {};
         
         return {
@@ -162,17 +165,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertUserSchema.parse(req.body);
       
       // Check if username or email already exists
-      const existingUser = await storage.getUserByUsername(validatedData.username);
+      const existingUser = await storageInstance.getUserByUsername(validatedData.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
       
-      const existingEmail = await storage.getUserByEmail(validatedData.email);
+      const existingEmail = await storageInstance.getUserByEmail(validatedData.email);
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
       
-      const newUser = await storage.createUser(validatedData);
+      const newUser = await storageInstance.createUser(validatedData);
       
       // Don't return password in response
       const { password, ...userWithoutPassword } = newUser;
@@ -194,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username and password are required" });
       }
       
-      const user = await storage.getUserByUsername(username);
+      const user = await storageInstance.getUserByUsername(username);
       if (!user || user.password !== password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -210,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/:id", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.id);
-      const user = await storage.getUser(userId);
+      const user = await storageInstance.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -227,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/user/:id", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.id);
-      const user = await storage.getUser(userId);
+      const user = await storageInstance.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -236,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't allow update of certain fields
       const { id, balance, createdAt, ...allowedUpdates } = req.body;
       
-      const updatedUser = await storage.updateUser(userId, allowedUpdates);
+      const updatedUser = await storageInstance.updateUser(userId, allowedUpdates);
       
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
@@ -254,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/assets", async (req: Request, res: Response) => {
     try {
       const type = req.query.type as string | undefined;
-      const assets = await storage.getAssets(type);
+      const assets = await storageInstance.getAssets(type);
       res.status(200).json(assets);
     } catch (error) {
       res.status(500).json({ message: "Failed to get assets" });
@@ -264,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/assets/:id", async (req: Request, res: Response) => {
     try {
       const assetId = parseInt(req.params.id);
-      const asset = await storage.getAsset(assetId);
+      const asset = await storageInstance.getAsset(assetId);
       
       if (!asset) {
         return res.status(404).json({ message: "Asset not found" });
@@ -279,11 +282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Trader routes
   app.get("/api/traders", async (req: Request, res: Response) => {
     try {
-      const traders = await storage.getTraders();
+      const traders = await storageInstance.getTraders();
       
       // Get user details for each trader
       const tradersWithDetails = await Promise.all(traders.map(async (trader) => {
-        const user = await storage.getUser(trader.userId);
+        const user = await storageInstance.getUser(trader.userId);
         if (!user) return null;
         
         const { password, ...userWithoutPassword } = user;
@@ -305,13 +308,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/traders/:id", async (req: Request, res: Response) => {
     try {
       const traderId = parseInt(req.params.id);
-      const trader = await storage.getTrader(traderId);
+      const trader = await storageInstance.getTrader(traderId);
       
       if (!trader) {
         return res.status(404).json({ message: "Trader not found" });
       }
       
-      const user = await storage.getUser(trader.userId);
+      const user = await storageInstance.getUser(trader.userId);
       if (!user) {
         return res.status(404).json({ message: "Trader user not found" });
       }
@@ -334,26 +337,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCopyRelationshipSchema.parse(req.body);
       
       // Check if follower exists
-      const follower = await storage.getUser(validatedData.followerId);
+      const follower = await storageInstance.getUser(validatedData.followerId);
       if (!follower) {
         return res.status(404).json({ message: "Follower not found" });
       }
       
       // Check if trader exists
-      const trader = await storage.getTrader(validatedData.traderId);
+      const trader = await storageInstance.getTrader(validatedData.traderId);
       if (!trader) {
         return res.status(404).json({ message: "Trader not found" });
       }
       
       // Check if relationship already exists
-      const existingRelationships = await storage.getCopyRelationshipsByFollowerId(validatedData.followerId);
+      const existingRelationships = await storageInstance.getCopyRelationshipsByFollowerId(validatedData.followerId);
       const existingRelationship = existingRelationships.find(r => r.traderId === validatedData.traderId);
       
       if (existingRelationship) {
         return res.status(400).json({ message: "Already following this trader" });
       }
       
-      const newRelationship = await storage.createCopyRelationship(validatedData);
+      const newRelationship = await storageInstance.createCopyRelationship(validatedData);
       res.status(201).json(newRelationship);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -367,14 +370,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/:userId/copy-trading", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.userId);
-      const relationships = await storage.getCopyRelationshipsByFollowerId(userId);
+      const relationships = await storageInstance.getCopyRelationshipsByFollowerId(userId);
       
       // Get trader details for each relationship
       const relationshipsWithDetails = await Promise.all(relationships.map(async (relationship) => {
-        const trader = await storage.getTrader(relationship.traderId);
+        const trader = await storageInstance.getTrader(relationship.traderId);
         if (!trader) return null;
         
-        const user = await storage.getUser(trader.userId);
+        const user = await storageInstance.getUser(trader.userId);
         if (!user) return null;
         
         // Don't return password in response
@@ -401,7 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/copy-trading/:id", async (req: Request, res: Response) => {
     try {
       const relationshipId = parseInt(req.params.id);
-      const relationship = await storage.getCopyRelationship(relationshipId);
+      const relationship = await storageInstance.getCopyRelationship(relationshipId);
       
       if (!relationship) {
         return res.status(404).json({ message: "Copy relationship not found" });
@@ -412,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: z.enum(["active", "paused", "stopped"]).optional()
       }).parse(req.body);
       
-      const updatedRelationship = await storage.updateCopyRelationship(relationshipId, validatedData);
+      const updatedRelationship = await storageInstance.updateCopyRelationship(relationshipId, validatedData);
       
       if (!updatedRelationship) {
         return res.status(404).json({ message: "Copy relationship not found" });
@@ -431,13 +434,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/copy-trading/:id", async (req: Request, res: Response) => {
     try {
       const relationshipId = parseInt(req.params.id);
-      const relationship = await storage.getCopyRelationship(relationshipId);
+      const relationship = await storageInstance.getCopyRelationship(relationshipId);
       
       if (!relationship) {
         return res.status(404).json({ message: "Copy relationship not found" });
       }
       
-      const result = await storage.deleteCopyRelationship(relationshipId);
+      const result = await storageInstance.deleteCopyRelationship(relationshipId);
       
       if (!result) {
         return res.status(404).json({ message: "Copy relationship not found" });
@@ -455,23 +458,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertTradeSchema.parse(req.body);
       
       // Check if user exists
-      const user = await storage.getUser(validatedData.userId);
+      const user = await storageInstance.getUser(validatedData.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Check if asset exists
-      const asset = await storage.getAsset(validatedData.assetId);
+      const asset = await storageInstance.getAsset(validatedData.assetId);
       if (!asset) {
         return res.status(404).json({ message: "Asset not found" });
       }
       
-      const newTrade = await storage.createTrade(validatedData);
+      const newTrade = await storageInstance.createTrade(validatedData);
       
       // Auto-execute the trade if it's not a copy
       if (!validatedData.copiedFromTradeId && validatedData.status === "pending") {
         try {
-          const executedTrade = await storage.executeTrade(newTrade.id);
+          const executedTrade = await storageInstance.executeTrade(newTrade.id);
           if (executedTrade) {
             return res.status(201).json(executedTrade);
           }
@@ -496,17 +499,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/:userId/trades", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.userId);
-      const user = await storage.getUser(userId);
+      const user = await storageInstance.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      const trades = await storage.getTradesByUserId(userId);
+      const trades = await storageInstance.getTradesByUserId(userId);
       
       // Get asset details for each trade
       const tradesWithAssets = await Promise.all(trades.map(async (trade) => {
-        const asset = await storage.getAsset(trade.assetId);
+        const asset = await storageInstance.getAsset(trade.assetId);
         return {
           ...trade,
           asset
@@ -522,13 +525,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/trades/:id", async (req: Request, res: Response) => {
     try {
       const tradeId = parseInt(req.params.id);
-      const trade = await storage.getTrade(tradeId);
+      const trade = await storageInstance.getTrade(tradeId);
       
       if (!trade) {
         return res.status(404).json({ message: "Trade not found" });
       }
       
-      const asset = await storage.getAsset(trade.assetId);
+      const asset = await storageInstance.getAsset(trade.assetId);
       
       res.status(200).json({
         ...trade,
@@ -542,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Investment plan routes
   app.get("/api/investment-plans", async (req: Request, res: Response) => {
     try {
-      const plans = await storage.getInvestmentPlans();
+      const plans = await storageInstance.getInvestmentPlans();
       res.status(200).json(plans);
     } catch (error) {
       res.status(500).json({ message: "Failed to get investment plans" });
@@ -552,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/investment-plans/:id", async (req: Request, res: Response) => {
     try {
       const planId = parseInt(req.params.id);
-      const plan = await storage.getInvestmentPlan(planId);
+      const plan = await storageInstance.getInvestmentPlan(planId);
       
       if (!plan) {
         return res.status(404).json({ message: "Investment plan not found" });
@@ -570,13 +573,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertInvestmentSchema.parse(req.body);
       
       // Check if user exists
-      const user = await storage.getUser(validatedData.userId);
+      const user = await storageInstance.getUser(validatedData.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Check if plan exists
-      const plan = await storage.getInvestmentPlan(validatedData.planId);
+      const plan = await storageInstance.getInvestmentPlan(validatedData.planId);
       if (!plan) {
         return res.status(404).json({ message: "Investment plan not found" });
       }
@@ -601,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: `Maximum investment amount is ${maxAmount}` });
       }
       
-      const newInvestment = await storage.createInvestment(validatedData);
+      const newInvestment = await storageInstance.createInvestment(validatedData);
       res.status(201).json(newInvestment);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -617,17 +620,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/:userId/investments", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.userId);
-      const user = await storage.getUser(userId);
+      const user = await storageInstance.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      const investments = await storage.getInvestmentsByUserId(userId);
+      const investments = await storageInstance.getInvestmentsByUserId(userId);
       
       // Get plan details for each investment
       const investmentsWithPlans = await Promise.all(investments.map(async (investment) => {
-        const plan = await storage.getInvestmentPlan(investment.planId);
+        const plan = await storageInstance.getInvestmentPlan(investment.planId);
         return {
           ...investment,
           plan
@@ -646,7 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertTransactionSchema.parse(req.body);
       
       // Check if user exists
-      const user = await storage.getUser(validatedData.userId);
+      const user = await storageInstance.getUser(validatedData.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -661,12 +664,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const newTransaction = await storage.createTransaction(validatedData);
+      const newTransaction = await storageInstance.createTransaction(validatedData);
       
       // Auto-complete deposits for demo purposes
       if (validatedData.type === "deposit" && validatedData.status === "pending") {
         try {
-          const completedTransaction = await storage.completeTransaction(newTransaction.id);
+          const completedTransaction = await storageInstance.completeTransaction(newTransaction.id);
           if (completedTransaction) {
             return res.status(201).json(completedTransaction);
           }
@@ -691,13 +694,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/:userId/transactions", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.userId);
-      const user = await storage.getUser(userId);
+      const user = await storageInstance.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      const transactions = await storage.getTransactionsByUserId(userId);
+      const transactions = await storageInstance.getTransactionsByUserId(userId);
       res.status(200).json(transactions);
     } catch (error) {
       res.status(500).json({ message: "Failed to get transactions" });
@@ -710,12 +713,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertKycDocumentSchema.parse(req.body);
       
       // Check if user exists
-      const user = await storage.getUser(validatedData.userId);
+      const user = await storageInstance.getUser(validatedData.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      const newDocument = await storage.createKycDocument(validatedData);
+      const newDocument = await storageInstance.createKycDocument(validatedData);
       res.status(201).json(newDocument);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -729,13 +732,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/:userId/kyc-documents", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.userId);
-      const user = await storage.getUser(userId);
+      const user = await storageInstance.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      const documents = await storage.getKycDocumentsByUserId(userId);
+      const documents = await storageInstance.getKycDocumentsByUserId(userId);
       res.status(200).json(documents);
     } catch (error) {
       res.status(500).json({ message: "Failed to get KYC documents" });
@@ -748,18 +751,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertWatchlistItemSchema.parse(req.body);
       
       // Check if user exists
-      const user = await storage.getUser(validatedData.userId);
+      const user = await storageInstance.getUser(validatedData.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Check if asset exists
-      const asset = await storage.getAsset(validatedData.assetId);
+      const asset = await storageInstance.getAsset(validatedData.assetId);
       if (!asset) {
         return res.status(404).json({ message: "Asset not found" });
       }
       
-      const newItem = await storage.createWatchlistItem(validatedData);
+      const newItem = await storageInstance.createWatchlistItem(validatedData);
       
       // Get asset details
       const itemWithAsset = {
@@ -780,17 +783,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/:userId/watchlist", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.userId);
-      const user = await storage.getUser(userId);
+      const user = await storageInstance.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      const watchlistItems = await storage.getWatchlistItemsByUserId(userId);
+      const watchlistItems = await storageInstance.getWatchlistItemsByUserId(userId);
       
       // Get asset details for each item
       const itemsWithAssets = await Promise.all(watchlistItems.map(async (item) => {
-        const asset = await storage.getAsset(item.assetId);
+        const asset = await storageInstance.getAsset(item.assetId);
         return {
           ...item,
           asset
@@ -806,13 +809,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/watchlist/:id", async (req: Request, res: Response) => {
     try {
       const itemId = parseInt(req.params.id);
-      const item = await storage.getWatchlistItem(itemId);
+      const item = await storageInstance.getWatchlistItem(itemId);
       
       if (!item) {
         return res.status(404).json({ message: "Watchlist item not found" });
       }
       
-      const result = await storage.deleteWatchlistItem(itemId);
+      const result = await storageInstance.deleteWatchlistItem(itemId);
       
       if (!result) {
         return res.status(404).json({ message: "Watchlist item not found" });

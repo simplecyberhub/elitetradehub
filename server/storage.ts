@@ -162,6 +162,7 @@ export class MemStorage implements IStorage {
       ...user,
       id,
       balance: "0",
+      avatar: user.avatar || null,
       kycStatus: "unverified",
       role: "user",
       createdAt: new Date()
@@ -216,7 +217,14 @@ export class MemStorage implements IStorage {
 
   async createAsset(asset: InsertAsset): Promise<Asset> {
     const id = this.currentIds.asset++;
-    const newAsset: Asset = { ...asset, id };
+    const newAsset: Asset = { 
+      ...asset, 
+      id,
+      change24h: asset.change24h || "0",
+      volume24h: asset.volume24h || null,
+      marketCap: asset.marketCap || null,
+      logoUrl: asset.logoUrl || null
+    };
     this.assetsTable.set(id, newAsset);
     return newAsset;
   }
@@ -250,6 +258,9 @@ export class MemStorage implements IStorage {
     const newTrader: Trader = {
       ...trader,
       id,
+      bio: trader.bio || null,
+      winRate: trader.winRate || "0",
+      profit30d: trader.profit30d || "0",
       followers: 0,
       rating: "0.0",
       status: "active"
@@ -289,6 +300,8 @@ export class MemStorage implements IStorage {
     const newRelationship: CopyRelationship = {
       ...relationship,
       id,
+      status: relationship.status || "active",
+      allocationPercentage: relationship.allocationPercentage || "100",
       createdAt: new Date()
     };
     this.copyRelationshipsTable.set(id, newRelationship);
@@ -341,6 +354,7 @@ export class MemStorage implements IStorage {
       ...trade,
       id,
       executedAt: null,
+      copiedFromTradeId: trade.copiedFromTradeId || null,
       createdAt: new Date()
     };
     this.tradesTable.set(id, newTrade);
@@ -433,6 +447,7 @@ export class MemStorage implements IStorage {
     const newPlan: InvestmentPlan = {
       ...plan,
       id,
+      maxAmount: plan.maxAmount || null,
       status: "active"
     };
     this.investmentPlansTable.set(id, newPlan);
@@ -505,6 +520,7 @@ export class MemStorage implements IStorage {
     const newTransaction: Transaction = {
       ...transaction,
       id,
+      transactionRef: transaction.transactionRef || null,
       createdAt: new Date(),
       completedAt: null
     };
@@ -561,6 +577,7 @@ export class MemStorage implements IStorage {
     const newDocument: KycDocument = {
       ...document,
       id,
+      expiryDate: document.expiryDate || null,
       verificationStatus: "pending",
       rejectionReason: null,
       submittedAt: new Date()
@@ -788,4 +805,4 @@ async function createStorage(): Promise<IStorage> {
   }
 }
 
-export const storage = await createStorage();
+export const storage = createStorage();
