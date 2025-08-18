@@ -408,7 +408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const validatedData = z.object({
-        allocationPercentage: z.number().min(1).max(100).optional(),
+        allocationPercentage: z.number().min(1).max(100).optional().transform(val => val ? val.toString() : undefined),
         status: z.enum(["active", "paused", "stopped"]).optional()
       }).parse(req.body);
       

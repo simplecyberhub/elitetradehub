@@ -86,7 +86,7 @@ export const trades = pgTable("trades", {
   status: text("status").notNull(), // pending, executed, canceled
   executedAt: timestamp("executed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  copiedFromTradeId: integer("copied_from_trade_id").references(() => trades.id),
+  copiedFromTradeId: integer("copied_from_trade_id"),
 });
 
 export const insertTradeSchema = createInsertSchema(trades).omit({
