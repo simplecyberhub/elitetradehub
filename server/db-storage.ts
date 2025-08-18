@@ -1,7 +1,7 @@
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import {
   users, assets, traders, copyRelationships, trades,
   investmentPlans, investments, transactions, kycDocuments, watchlistItems,
@@ -161,7 +161,7 @@ export class DbStorage implements IStorage {
     }
 
     const result = await this.db.delete(copyRelationships).where(eq(copyRelationships.id, id));
-    return result.rowCount > 0;
+    return result.length > 0;
   }
 
   // Trade operations
@@ -397,8 +397,7 @@ export class DbStorage implements IStorage {
   async createWatchlistItem(item: InsertWatchlistItem): Promise<WatchlistItem> {
     // Check if item already exists
     const existing = await this.db.select().from(watchlistItems)
-      .where(eq(watchlistItems.userId, item.userId))
-      .where(eq(watchlistItems.assetId, item.assetId))
+      .where(and(eq(watchlistItems.userId, item.userId), eq(watchlistItems.assetId, item.assetId)))
       .limit(1);
     
     if (existing.length > 0) {
@@ -411,7 +410,7 @@ export class DbStorage implements IStorage {
 
   async deleteWatchlistItem(id: number): Promise<boolean> {
     const result = await this.db.delete(watchlistItems).where(eq(watchlistItems.id, id));
-    return result.rowCount > 0;
+    return result.length > 0;
   }
 
   // Admin operations
