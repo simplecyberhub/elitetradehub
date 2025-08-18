@@ -12,17 +12,17 @@ const OrderExecution = () => {
   const [, params] = useRoute("/order/:id");
   const assetId = params?.id ? parseInt(params.id) : null;
   const [timeframe, setTimeframe] = useState("1D");
-  
+
   const { 
     data: asset,
     isLoading,
     error
   } = useAsset(assetId);
-  
+
   // Helper function to get icon based on symbol
   const getAssetIcon = (symbol: string) => {
     const iconSize = "w-8 h-8";
-    
+
     if (symbol.includes("AAPL")) return <AppleIcon className={iconSize} />;
     if (symbol.includes("AMZN")) return <AmazonIcon className={iconSize} />;
     if (symbol.includes("NFLX")) return <NetflixIcon className={iconSize} />;
@@ -32,12 +32,12 @@ const OrderExecution = () => {
     if (symbol.includes("EUR") || symbol.includes("USD") || symbol.includes("GBP") || symbol.includes("JPY")) {
       return <CurrencyIcon className={iconSize} />;
     }
-    
+
     return <svg xmlns="http://www.w3.org/2000/svg" className={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 10H3M16 2v8M8 2v8M12 14v4M12 22v-4M7 14h10v4a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4v-4Z" />
     </svg>;
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -48,7 +48,7 @@ const OrderExecution = () => {
       </div>
     );
   }
-  
+
   if (error || !asset) {
     return (
       <div className="text-center py-12">
@@ -57,14 +57,14 @@ const OrderExecution = () => {
       </div>
     );
   }
-  
+
   return (
     <>
       <Helmet>
         <title>Trade {asset.name} | EliteStock Trading Platform</title>
         <meta name="description" content={`Execute trades for ${asset.name} (${asset.symbol}) on EliteStock Trading Platform. View real-time price and place orders.`} />
       </Helmet>
-      
+
       <div>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
@@ -95,7 +95,7 @@ const OrderExecution = () => {
             <div className="text-sm text-neutral-400">Current Price</div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2 bg-neutral-800 rounded-lg p-4">
             <div className="flex flex-wrap gap-2 mb-3">
@@ -114,19 +114,19 @@ const OrderExecution = () => {
               ))}
             </div>
             <div className="h-80">
-              <MarketChart asset={asset} timeframe={timeframe} />
+              <MarketChart assetId={asset?.id} symbol={asset?.symbol} />
             </div>
           </div>
-          
+
           <div className="bg-neutral-800 rounded-lg p-4">
             <h2 className="text-xl font-semibold mb-4">Place Order</h2>
             <OrderForm asset={asset} />
           </div>
         </div>
-        
+
         <div className="bg-neutral-800 rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Asset Information</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <h3 className="text-lg font-medium mb-3">Overview</h3>
@@ -151,7 +151,7 @@ const OrderExecution = () => {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-medium mb-3">Market Data</h3>
               <div className="space-y-2">
@@ -173,7 +173,7 @@ const OrderExecution = () => {
                 )}
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-medium mb-3">Trading Info</h3>
               <div className="space-y-2">

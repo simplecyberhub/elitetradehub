@@ -7,6 +7,7 @@ import {
   type Investment, type InsertInvestment, type Transaction, type InsertTransaction,
   type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem
 } from "@shared/schema";
+import { DbStorage } from "./db-storage";
 
 // Interface for storage operations
 export interface IStorage {
@@ -77,6 +78,11 @@ export interface IStorage {
   getWatchlistItemsByUserId(userId: number): Promise<WatchlistItem[]>;
   createWatchlistItem(item: InsertWatchlistItem): Promise<WatchlistItem>;
   deleteWatchlistItem(id: number): Promise<boolean>;
+
+  // Admin operations
+  getAllUsers(): Promise<User[]>;
+  getAllKycDocuments(): Promise<KycDocument[]>;
+  getAllTrades(): Promise<Trade[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -626,8 +632,32 @@ export class MemStorage implements IStorage {
     return this.watchlistItemsTable.delete(id);
   }
 
+  // Admin operations
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.usersTable.values());
+  }
+
+  async getAllKycDocuments(): Promise<KycDocument[]> {
+    return Array.from(this.kycDocumentsTable.values());
+  }
+
+  async getAllTrades(): Promise<Trade[]> {
+    return Array.from(this.tradesTable.values());
+  }
+
   // Seed initial data
   private seedData() {
+    // Create admin user
+    const adminUser: InsertUser = {
+      username: "admin",
+      password: "admin123",
+      email: "admin@example.com",
+      fullName: "Administrator",
+    };
+    this.createUser(adminUser).then(admin => {
+      this.updateUser(admin.id, { role: "admin" });
+    });
+
     // Create demo user
     const demoUser: InsertUser = {
       username: "demo",
@@ -734,4 +764,28 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Create storage instance based on environment
+async function createStorage(): Promise<IStorage> {
+  if (process.env.DATABASE_URL) {
+    console.log("Using PostgreSQL database storage");
+    const dbStorage = new DbStorage(process.env.DATABASE_URL);
+    
+    // Check if database needs seeding (if no users exist)
+    try {
+      const existingUser = await dbStorage.getUserByUsername("demo");
+      if (!existingUser) {
+        const { seedDatabase } = await import("./seed");
+        await seedDatabase(dbStorage);
+      }
+    } catch (error) {
+      console.error("Error checking/seeding database:", error);
+    }
+    
+    return dbStorage;
+  } else {
+    console.log("Using in-memory storage (no DATABASE_URL found)");
+    return new MemStorage();
+  }
+}
+
+export const storage = await createStorage();

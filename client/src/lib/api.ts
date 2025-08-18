@@ -153,21 +153,34 @@ export async function fetchUserInvestments(userId: number) {
 
 // Transaction functions
 export async function createDeposit(userId: number, amount: number, method: string) {
-  const response = await apiRequest('POST', '/api/transactions', {
+  console.log("Creating deposit API call:", { userId, amount, method });
+  
+  const depositData = {
     userId,
     type: 'deposit',
     amount: amount.toString(),
     method,
     status: 'pending',
     transactionRef: `DEP${Date.now()}`
-  });
+  };
+  
+  console.log("Deposit data being sent:", depositData);
+  
+  const response = await apiRequest('POST', '/api/transactions', depositData);
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
   
   // Invalidate transactions cache
   queryClient.invalidateQueries({ queryKey: [`/api/user/${userId}/transactions`] });
   // Invalidate user data to update balance
   queryClient.invalidateQueries({ queryKey: [`/api/user/${userId}`] });
   
-  return response.json();
+  const result = await response.json();
+  console.log("Deposit API response:", result);
+  return result;
 }
 
 export async function createWithdrawal(userId: number, amount: number, method: string) {

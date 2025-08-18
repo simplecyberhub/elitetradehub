@@ -50,7 +50,7 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSuccess, setIsSuccess] = useState(false);
-  
+
   const form = useForm<DepositFormValues>({
     resolver: zodResolver(depositFormSchema),
     defaultValues: {
@@ -68,9 +68,12 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
   });
 
   const depositMutation = useMutation({
-    mutationFn: (data: { userId: number; amount: number; method: string }) =>
-      createDeposit(data.userId, data.amount, data.method),
-    onSuccess: () => {
+    mutationFn: (data: { userId: number; amount: number; method: string }) => {
+      console.log("Creating deposit with data:", data);
+      return createDeposit(data.userId, data.amount, data.method);
+    },
+    onSuccess: (data) => {
+      console.log("Deposit successful:", data);
       queryClient.invalidateQueries({ queryKey: [`/api/user/${user?.id}/transactions`] });
       queryClient.invalidateQueries({ queryKey: [`/api/user/${user?.id}`] });
       setIsSuccess(true);
@@ -80,17 +83,27 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
       });
     },
     onError: (error) => {
+      console.error("Deposit error:", error);
       toast({
         variant: "destructive",
         title: "Deposit failed",
-        description: "There was an error processing your deposit. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error processing your deposit. Please try again.",
       });
     },
   });
 
   const onSubmit = (values: DepositFormValues) => {
-    if (!user) return;
-    
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Please log in to make a deposit.",
+      });
+      return;
+    }
+
+    console.log("Submitting deposit:", { userId: user.id, amount: values.amount, method });
+
     depositMutation.mutate({
       userId: user.id,
       amount: values.amount,
@@ -335,7 +348,7 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
                   )}
                 />
               </TabsContent>
-              
+
               <TabsContent value="eth" className="py-4">
                 <div className="bg-neutral-900 rounded-lg p-4 mb-4">
                   <p className="text-sm text-neutral-400 mb-2">Send Ethereum to the following address:</p>
@@ -369,7 +382,7 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
                   )}
                 />
               </TabsContent>
-              
+
               <TabsContent value="usdt" className="py-4">
                 <div className="bg-neutral-900 rounded-lg p-4 mb-4">
                   <p className="text-sm text-neutral-400 mb-2">Send USDT (ERC-20) to the following address:</p>
@@ -435,15 +448,15 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-neutral-400">Amount</span>
-              <span>${form.watch("amount") || 0}</span>
+              <span>${parseFloat(form.watch("amount")?.toString() || "0").toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-neutral-400">Fee</span>
               <span>
                 {method === "credit_card"
-                  ? `$${((form.watch("amount") || 0) * 0.015).toFixed(2)} (1.5%)`
+                  ? `$${((parseFloat(form.watch("amount")?.toString() || "0")) * 0.015).toFixed(2)} (1.5%)`
                   : method === "paypal"
-                  ? `$${((form.watch("amount") || 0) * 0.025).toFixed(2)} (2.5%)`
+                  ? `$${((parseFloat(form.watch("amount")?.toString() || "0")) * 0.025).toFixed(2)} (2.5%)`
                   : "$0.00"}
               </span>
             </div>
@@ -451,10 +464,10 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
               <span>Total</span>
               <span>
                 ${method === "credit_card"
-                  ? ((form.watch("amount") || 0) * 1.015).toFixed(2)
+                  ? ((parseFloat(form.watch("amount")?.toString() || "0")) * 1.015).toFixed(2)
                   : method === "paypal"
-                  ? ((form.watch("amount") || 0) * 1.025).toFixed(2)
-                  : (form.watch("amount") || 0).toFixed(2)}
+                  ? ((parseFloat(form.watch("amount")?.toString() || "0")) * 1.025).toFixed(2)
+                  : (parseFloat(form.watch("amount")?.toString() || "0")).toFixed(2)}
               </span>
             </div>
           </div>

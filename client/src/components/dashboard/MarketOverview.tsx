@@ -97,7 +97,7 @@ const MarketOverview = () => {
 
         {/* Chart Component */}
         <div className="h-64 relative">
-          <MarketChart asset={asset} timeframe={timeframe} />
+          <MarketChart assetId={asset?.id} symbol={asset?.symbol} />
           
           {/* Time indicators */}
           <div className="flex justify-between text-xs text-neutral-400 mt-2">

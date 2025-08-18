@@ -7,20 +7,36 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const res = await fetch(url, {
+export async function apiRequest(method: string, url: string, data?: any) {
+  console.log(`API Request: ${method} ${url}`, data ? { data } : '');
+
+  const config: RequestInit = {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  };
+
+  if (data) {
+    config.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(url, config);
+
+  console.log(`API Response: ${method} ${url}`, {
+    status: response.status,
+    ok: response.ok,
+    statusText: response.statusText
   });
 
-  await throwIfResNotOk(res);
-  return res;
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown error');
+    console.error(`API Error: ${method} ${url}`, { status: response.status, error: errorText });
+    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+  }
+
+  return response;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -29,7 +45,19 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get user from localStorage to include auth headers
+    const user = localStorage.getItem("user");
+    const userData = user ? JSON.parse(user) : null;
+
+    const headers: Record<string, string> = {
+      ...(userData ? { 
+        "x-user-id": userData.id.toString(),
+        "x-user-role": userData.role 
+      } : {})
+    };
+
     const res = await fetch(queryKey[0] as string, {
+      headers,
       credentials: "include",
     });
 

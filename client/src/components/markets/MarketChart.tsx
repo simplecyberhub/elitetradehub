@@ -1,161 +1,124 @@
-import React, { useState, useEffect } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface MarketChartProps {
-  asset: any;
-  timeframe: string;
-}
+// Mock data for demonstration
+const generateMockData = () => {
+  const data = [];
+  const now = new Date();
 
-const MarketChart: React.FC<MarketChartProps> = ({ asset, timeframe }) => {
-  const [chartData, setChartData] = useState<any[]>([]);
-  
-  // Helper to generate realistic price data based on current price and timeframe
-  const generateChartData = () => {
-    const data: any[] = [];
-    const currentPrice = parseFloat(asset.price);
-    const volatility = asset.type === "crypto" ? 0.03 : asset.type === "forex" ? 0.005 : 0.015;
-    let points: number;
-    let interval: string;
-    
-    // Set points and interval based on timeframe
-    switch (timeframe) {
-      case "1D":
-        points = 24;
-        interval = "h";
-        break;
-      case "1W":
-        points = 7;
-        interval = "d";
-        break;
-      case "1M":
-        points = 30;
-        interval = "d";
-        break;
-      case "1Y":
-        points = 12;
-        interval = "m";
-        break;
-      default:
-        points = 24;
-        interval = "h";
-    }
-    
-    // Generate random walk price data
-    let price = currentPrice * (1 - Math.random() * volatility * points / 2);
-    
-    // Determine trend direction (slightly biased towards matching 24h change)
-    const trend = parseFloat(asset.change24h) >= 0 ? 0.55 : 0.45;
-    
-    for (let i = 0; i < points; i++) {
-      // Random price movement with trend bias
-      const movement = Math.random() < trend ? 1 : -1;
-      const change = price * volatility * movement * Math.random();
-      price = price + change;
-      
-      // Ensure price doesn't go negative
-      if (price <= 0) price = currentPrice * 0.001;
-      
-      // Format time label based on interval
-      let timeLabel;
-      const now = new Date();
-      
-      if (interval === "h") {
-        const hour = new Date(now);
-        hour.setHours(hour.getHours() - (points - i));
-        timeLabel = hour.toLocaleTimeString([], { hour: '2-digit' });
-      } else if (interval === "d") {
-        const day = new Date(now);
-        day.setDate(day.getDate() - (points - i));
-        timeLabel = day.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      } else if (interval === "m") {
-        const month = new Date(now);
-        month.setMonth(month.getMonth() - (points - i));
-        timeLabel = month.toLocaleDateString([], { month: 'short' });
-      }
-      
-      data.push({
-        time: timeLabel,
-        price: price.toFixed(2),
-      });
-    }
-    
-    return data;
-  };
-  
-  // Update chart data when asset or timeframe changes
-  useEffect(() => {
-    setChartData(generateChartData());
-  }, [asset.id, asset.price, timeframe]);
-  
-  // Custom tooltip for the chart
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-neutral-900 p-2 border border-neutral-700 rounded text-xs">
-          <p className="text-white">{`${label}: $${parseFloat(payload[0].value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: asset.type === 'crypto' ? 6 : 2 })}`}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-  
-  // Get color based on price trend
-  const getChartColor = () => {
-    if (chartData.length < 2) return "#10b981"; // Default to green
-    
-    const firstPrice = parseFloat(chartData[0].price);
-    const lastPrice = parseFloat(chartData[chartData.length - 1].price);
-    
-    return lastPrice >= firstPrice ? "#10b981" : "#ef4444";
-  };
-  
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart
-        data={chartData}
-        margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
-      >
-        <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-        <XAxis 
-          dataKey="time" 
-          tick={{ fontSize: 10, fill: "#999" }}
-          axisLine={{ stroke: "#444" }}
-          tickLine={{ stroke: "#444" }}
-        />
-        <YAxis 
-          domain={['auto', 'auto']}
-          tick={{ fontSize: 10, fill: "#999" }}
-          axisLine={{ stroke: "#444" }}
-          tickLine={{ stroke: "#444" }}
-          tickFormatter={(value) => `$${value}`}
-          width={60}
-        />
-        <Tooltip content={<CustomTooltip />} />
-        <ReferenceLine
-          y={parseFloat(asset.price)}
-          stroke="#666"
-          strokeDasharray="3 3"
-        />
-        <Line
-          type="monotone"
-          dataKey="price"
-          stroke={getChartColor()}
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4, stroke: getChartColor(), strokeWidth: 1, fill: "#111" }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  );
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+
+    const basePrice = 150 + Math.random() * 50;
+    data.push({
+      id: `price-${i}`,
+      date: date.toISOString().split('T')[0],
+      price: Math.round(basePrice * 100) / 100,
+    });
+  }
+
+  return data;
 };
 
-export default MarketChart;
+interface MarketChartProps {
+  assetId?: number;
+  symbol?: string;
+}
+
+export default function MarketChart({ assetId, symbol = "AAPL" }: MarketChartProps) {
+  const { data: chartData, isLoading, error } = useQuery({
+    queryKey: [`/api/assets/${assetId || 1}/chart`],
+    queryFn: () => {
+      // For now, return mock data since we don't have real chart data endpoint
+      return Promise.resolve(generateMockData());
+    },
+    enabled: true,
+  });
+
+  if (isLoading) {
+    return (
+      <Card className="bg-neutral-800 border-neutral-700">
+        <CardHeader>
+          <CardTitle>Price Chart</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="w-full h-64 bg-neutral-700" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-neutral-800 border-neutral-700">
+        <CardHeader>
+          <CardTitle>Price Chart</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-neutral-400">
+            Failed to load chart data
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!chartData || chartData.length === 0) {
+    return (
+      <Card className="bg-neutral-800 border-neutral-700">
+        <CardHeader>
+          <CardTitle>Price Chart</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-neutral-400">
+            No chart data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-neutral-800 border-neutral-700">
+      <CardHeader>
+        <CardTitle>{symbol} Price Chart</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#9CA3AF"
+                fontSize={12}
+              />
+              <YAxis 
+                stroke="#9CA3AF"
+                fontSize={12}
+              />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: '#1F2937',
+                  border: '1px solid #374151',
+                  borderRadius: '6px',
+                  color: '#F9FAFB'
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="price" 
+                stroke="#3B82F6" 
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
