@@ -47,23 +47,21 @@ const Header = () => {
             <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
           </button>
 
-          <Link href="/profile">
-            <a className="flex items-center gap-2 cursor-pointer hover:bg-neutral-700 p-1.5 rounded-md">
-              <Avatar className="h-8 w-8 bg-primary">
-                <AvatarFallback>{userInitials}</AvatarFallback>
-              </Avatar>
-              <div className="hidden md:block">
-                <p className="text-sm font-medium">{user.fullName}</p>
-                <p className="text-xs text-neutral-400">{user.kycStatus === "verified" ? "Verified Trader" : "Pending Verification"}</p>
-              </div>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </a>
+          <Link href="/profile" className="flex items-center gap-2 cursor-pointer hover:bg-neutral-700 p-1.5 rounded-md">
+            <Avatar className="h-8 w-8 bg-primary">
+              <AvatarFallback>{userInitials}</AvatarFallback>
+            </Avatar>
+            <div className="hidden md:block">
+              <p className="text-sm font-medium">{user.fullName}</p>
+              <p className="text-xs text-neutral-400">{user.kycStatus === "verified" ? "Verified Trader" : "Pending Verification"}</p>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </Link>
           {user.role === 'admin' && (
-            <Link href="/admin">
-              <a className="text-sm text-blue-500">Admin Dashboard</a>
+            <Link href="/admin" className="text-sm text-blue-500">
+              Admin Dashboard
             </Link>
           )}
         </div>
