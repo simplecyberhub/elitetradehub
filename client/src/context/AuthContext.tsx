@@ -16,28 +16,38 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  register: (userData: any) => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  checkAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Check for stored user on initial load
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("user");
-      }
+  // Check authentication status on initial load
+  const checkAuth = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiRequest("GET", "/api/auth/me");
+      const userData = await response.json();
+      setUser(userData);
+    } catch (error) {
+      // User is not authenticated
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    checkAuth();
   }, []);
 
   const login = async (username: string, password: string) => {
@@ -45,9 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await apiRequest("POST", "/api/auth/login", { username, password });
       const userData = await response.json();
       
-      // Store user in state and localStorage
+      // Session is now handled by server-side cookies
       setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
       
       toast({
         title: "Login successful",
@@ -64,13 +73,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
+  const logout = async () => {
+    try {
+      await apiRequest("POST", "/api/auth/logout");
+      setUser(null);
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Still clear user state even if server logout fails
+      setUser(null);
+    }
+  };
+  
+  const register = async (userData: any) => {
+    try {
+      const response = await apiRequest("POST", "/api/auth/register", userData);
+      const newUserData = await response.json();
+      
+      // User is automatically logged in after registration
+      setUser(newUserData);
+      
+      toast({
+        title: "Registration successful",
+        description: `Welcome to EliteStock, ${newUserData.fullName}!`,
+      });
+    } catch (error) {
+      console.error("Registration failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Registration failed",
+        description: "Failed to create account. Please try again.",
+      });
+      throw error;
+    }
   };
 
   const updateUser = async (userData: Partial<User>) => {
@@ -80,10 +118,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await apiRequest("PATCH", `/api/user/${user.id}`, userData);
       const updatedUserData = await response.json();
       
-      // Update user in state and localStorage
+      // Update user in state only (session handles persistence)
       const newUserData = { ...user, ...updatedUserData };
       setUser(newUserData);
-      localStorage.setItem("user", JSON.stringify(newUserData));
       
       toast({
         title: "Profile updated",
@@ -102,9 +139,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const contextValue: AuthContextType = {
     user,
+    isLoading,
     login,
     logout,
+    register,
     updateUser,
+    checkAuth,
   };
 
   return (

@@ -56,14 +56,14 @@ const RecentTrades = () => {
   };
 
   // Get the most recent trades (max 4)
-  const recentTrades = trades?.slice(0, 4) || [];
+  const recentTrades = Array.isArray(trades) ? trades.slice(0, 4) : [];
 
   return (
     <div className="bg-neutral-800 rounded-lg p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Recent Trades</h2>
-        <Link href="/transactions">
-          <a className="text-primary text-sm hover:underline">View All</a>
+        <Link href="/transactions" className="text-primary text-sm hover:underline">
+          View All
         </Link>
       </div>
 

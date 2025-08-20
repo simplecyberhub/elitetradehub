@@ -8,37 +8,19 @@ import {
   insertInvestmentSchema, insertTransactionSchema, insertKycDocumentSchema,
   insertWatchlistItemSchema
 } from "@shared/schema";
+import { 
+  requireAuth, requireAdmin, hashPassword, validatePassword,
+  sendWelcomeEmail, sendTransactionEmail, sendKycStatusEmail,
+  configureSession, configureSecurity
+} from "./auth";
 
-// Middleware to check if user is authenticated and has required role
-function requireAuth(req: Request, res: Response, next: any) {
-  const userId = req.headers['x-user-id'];
-  if (!userId) {
-    return res.status(401).json({ message: "Authentication required" });
-  }
-  req.userId = parseInt(userId as string);
-  next();
-}
-
-function requireAdmin(req: Request, res: Response, next: any) {
-  // In a real app, you'd verify the user's role from session/token
-  // For demo purposes, we'll check the user-role header
-  const userRole = req.headers['x-user-role'];
-  if (userRole !== 'admin') {
-    return res.status(403).json({ message: "Admin access required" });
-  }
-  next();
-}
-
-// Extend Request interface to include userId
-declare global {
-  namespace Express {
-    interface Request {
-      userId?: number;
-    }
-  }
-}
+// Authentication and security middleware configured in auth.ts
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure security and session management
+  configureSecurity(app);
+  configureSession(app);
+  
   // Initialize storage
   const storageInstance = await storage;
   
@@ -98,6 +80,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const docId = parseInt(req.params.id);
       const { verificationStatus, rejectionReason } = req.body;
       
+      // Get the KYC document first to get user info
+      const existingDoc = await storageInstance.getKycDocument(docId);
+      if (!existingDoc) {
+        return res.status(404).json({ message: "KYC document not found" });
+      }
+      
+      const user = await storageInstance.getUser(existingDoc.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
       const updatedDoc = await storageInstance.updateKycDocument(docId, {
         verificationStatus,
         rejectionReason
@@ -106,6 +99,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedDoc) {
         return res.status(404).json({ message: "KYC document not found" });
       }
+      
+      // Update user KYC status if approved
+      if (verificationStatus === 'verified') {
+        await storageInstance.updateUser(existingDoc.userId, { kycStatus: 'verified' });
+      } else if (verificationStatus === 'rejected') {
+        await storageInstance.updateUser(existingDoc.userId, { kycStatus: 'unverified' });
+      }
+      
+      // Send KYC status email notification
+      await sendKycStatusEmail(user.email, verificationStatus);
       
       res.status(200).json(updatedDoc);
     } catch (error) {
@@ -175,7 +178,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
       
-      const newUser = await storageInstance.createUser(validatedData);
+      // Hash password before storing
+      const hashedPassword = await hashPassword(validatedData.password);
+      const userDataWithHashedPassword = {
+        ...validatedData,
+        password: hashedPassword
+      };
+      
+      const newUser = await storageInstance.createUser(userDataWithHashedPassword);
+      
+      // Set up session
+      req.session.userId = newUser.id;
+      req.session.userRole = newUser.role;
+      
+      // Send welcome email
+      await sendWelcomeEmail(newUser.email, newUser.username);
       
       // Don't return password in response
       const { password, ...userWithoutPassword } = newUser;
@@ -198,15 +215,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const user = await storageInstance.getUserByUsername(username);
-      if (!user || user.password !== password) {
+      if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
+      
+      // Validate password with bcrypt
+      const passwordValid = await validatePassword(password, user.password);
+      if (!passwordValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Set up session
+      req.session.userId = user.id;
+      req.session.userRole = user.role;
       
       // Don't return password in response
       const { password: _, ...userWithoutPassword } = user;
       res.status(200).json(userWithoutPassword);
     } catch (error) {
       res.status(500).json({ message: "Failed to login" });
+    }
+  });
+  
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Failed to logout" });
+      }
+      res.clearCookie('connect.sid');
+      res.status(200).json({ message: "Logged out successfully" });
+    });
+  });
+  
+  app.get("/api/auth/me", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = await storageInstance.getUser(req.userId!);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const { password, ...userWithoutPassword } = user;
+      res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user data" });
     }
   });
 
@@ -665,6 +716,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const newTransaction = await storageInstance.createTransaction(validatedData);
+      
+      // Send transaction email notification
+      await sendTransactionEmail(
+        user.email, 
+        validatedData.type as 'deposit' | 'withdrawal',
+        validatedData.amount.toString()
+      );
       
       // Auto-complete deposits for demo purposes
       if (validatedData.type === "deposit" && validatedData.status === "pending") {
