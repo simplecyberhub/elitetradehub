@@ -1,4 +1,4 @@
-import { pgTable, text, serial, numeric, boolean, jsonb, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, numeric, boolean, jsonb, timestamp, integer, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -209,3 +209,10 @@ export type InsertKycDocument = z.infer<typeof insertKycDocumentSchema>;
 
 export type WatchlistItem = typeof watchlistItems.$inferSelect;
 export type InsertWatchlistItem = z.infer<typeof insertWatchlistItemSchema>;
+
+// Sessions table for express-session with connect-pg-simple
+export const sessions = pgTable("session", {
+  sid: varchar("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire", { mode: 'date' }).notNull(),
+});
