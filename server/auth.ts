@@ -19,23 +19,20 @@ declare module 'express-session' {
 const PgSession = connectPg(session);
 
 export function configureSession(app: Express) {
-  const sessionMiddleware = session({
-    store: new PgSession({
-      pool: pool,
-      tableName: 'session',
-      createTableIfMissing: false, // We manage the table in our schema
-    }),
-    secret: process.env.SESSION_SECRET || 'fallback-secret-key-for-development',
+  const sessionSecret = process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production';
+
+  app.use(session({
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to false for development
       httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    }
-  });
-
-  app.use(sessionMiddleware);
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: 'lax'
+    },
+    store: new (require('express-session').MemoryStore)()
+  }));
 }
 
 // Password hashing utilities
@@ -49,13 +46,30 @@ export async function validatePassword(password: string, hash: string): Promise<
 }
 
 // Authentication middleware
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.session.userId) {
+export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+  console.log('Auth check - Session:', req.session?.userId, 'Headers:', req.headers['x-user-id']);
+
+  if (!req.session?.userId) {
     return res.status(401).json({ message: "Authentication required" });
   }
-  req.userId = req.session.userId;
-  next();
-}
+
+  try {
+    const storageInstance = await storage;
+    const user = await storageInstance.getUser(req.session.userId);
+
+    if (!user) {
+      req.session.destroy(() => {});
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.userId = user.id;
+    req.userRole = user.role;
+    next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.status(500).json({ message: "Authentication error" });
+  }
+};
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId || req.session.userRole !== 'admin') {
@@ -91,7 +105,7 @@ export async function sendTransactionEmail(
     const template = type === 'deposit' 
       ? emailTemplates.depositConfirmation(amount, asset)
       : emailTemplates.withdrawalRequest(amount, asset);
-    
+
     await sendEmail({
       to: email,
       from: 'noreply@elitestock.com', // Replace with verified sender
@@ -126,7 +140,7 @@ export async function sendKycStatusEmail(
 export function configureSecurity(app: Express) {
   // Enable trust proxy to fix rate limiting issues
   app.set('trust proxy', 1);
-  
+
   // Security headers
   app.use(helmet({
     contentSecurityPolicy: {
@@ -171,6 +185,7 @@ declare global {
   namespace Express {
     interface Request {
       userId?: number;
+      userRole?: string;
     }
   }
 }

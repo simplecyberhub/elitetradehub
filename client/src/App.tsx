@@ -195,6 +195,8 @@ function AppContent() {
             <Route path="/withdraw" component={Withdraw} />
             <Route path="/profile" component={Profile} />
             <Route path="/kyc-verification" component={KycVerification} />
+            <Route path="/kyc" component={KycVerification} />
+            <Route path="/order/:id" component={OrderExecution} />
             <Route path="/transactions" component={Transactions} />
             <Route path="/admin">
               {() => {

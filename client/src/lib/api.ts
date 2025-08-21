@@ -232,3 +232,27 @@ export async function fetchUserKycDocuments(userId: number) {
   
   return response.json();
 }
+
+export async function createDeposit(userId: number, amount: number, method: string) {
+  const response = await fetch('/api/transactions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+      userId,
+      type: 'deposit',
+      amount: amount.toString(),
+      method,
+      status: 'pending'
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to create deposit: ${response.statusText}`);
+  }
+
+  return response.json();
+}

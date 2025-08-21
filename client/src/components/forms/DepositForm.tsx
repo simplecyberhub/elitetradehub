@@ -102,6 +102,16 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
       return;
     }
 
+    // Validate amount
+    if (!values.amount || values.amount < 10) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Amount",
+        description: "Minimum deposit amount is $10.",
+      });
+      return;
+    }
+
     console.log("Submitting deposit:", { userId: user.id, amount: values.amount, method });
 
     depositMutation.mutate({
