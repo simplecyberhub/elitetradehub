@@ -50,8 +50,8 @@ const DepositMethods = () => {
     <div className="bg-neutral-800 rounded-lg p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Deposit Methods</h2>
-        <Link href="/deposit">
-          <a className="text-primary text-sm hover:underline">Deposit Now</a>
+        <Link href="/deposit" className="text-primary text-sm hover:underline">
+          Deposit Now
         </Link>
       </div>
 

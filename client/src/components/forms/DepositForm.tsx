@@ -496,7 +496,9 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
           disabled={depositMutation.isPending}
           onClick={(e) => {
             console.log("Submit button clicked");
-            // Let the form handle the submission naturally
+            console.log("Form errors:", form.formState.errors);
+            console.log("Form values:", form.getValues());
+            console.log("Form is valid:", form.formState.isValid);
           }}
         >
           {depositMutation.isPending ? (
