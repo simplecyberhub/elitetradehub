@@ -105,8 +105,8 @@ const CopyTrading = () => {
     <div className="bg-neutral-800 rounded-lg p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Copy Trading</h2>
-        <Link href="/copy-trading">
-          <a className="text-primary text-sm hover:underline">Find Traders</a>
+        <Link href="/copy-trading" className="text-primary text-sm hover:underline">
+          Find Traders
         </Link>
       </div>
 

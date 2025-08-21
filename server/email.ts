@@ -17,6 +17,12 @@ interface EmailParams {
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
+    // Check if SendGrid API key is properly configured
+    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your-sendgrid-api-key') {
+      console.warn('SendGrid API key not configured - email sending disabled');
+      return false;
+    }
+
     const emailData: any = {
       to: params.to,
       from: params.from,
@@ -27,9 +33,11 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     if (params.html) emailData.html = params.html;
     
     await mailService.send(emailData);
+    console.log('Email sent successfully to:', params.to);
     return true;
   } catch (error) {
     console.error('SendGrid email error:', error);
+    // For development, don't let email failures break the application
     return false;
   }
 }

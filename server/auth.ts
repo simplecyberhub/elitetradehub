@@ -24,15 +24,16 @@ export function configureSession(app: Express) {
 
   app.use(session({
     secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: {
       secure: false, // Set to false for development
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       sameSite: 'lax'
     },
-    store: new session.MemoryStore()
+    store: new session.MemoryStore(),
+    name: 'sessionId'
   }));
 }
 
@@ -47,29 +48,20 @@ export async function validatePassword(password: string, hash: string): Promise<
 }
 
 // Authentication middleware
-export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
-  console.log('Auth check - Session:', req.session?.userId, 'Headers:', req.headers['x-user-id']);
+export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  console.log('Auth check - Session exists:', !!req.session);
+  console.log('Auth check - Session ID:', req.sessionID);
+  console.log('Auth check - User ID:', req.session?.userId);
 
-  if (!req.session?.userId) {
-    return res.status(401).json({ message: "Authentication required" });
+  // Ensure session exists and has userId
+  if (!req.session || !req.session.userId) {
+    console.log('Authentication failed - no session or userId');
+    return res.status(401).json({ message: 'Authentication required' });
   }
 
-  try {
-    const storageInstance = await storage;
-    const user = await storageInstance.getUser(req.session.userId);
-
-    if (!user) {
-      req.session.destroy(() => {});
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    req.userId = user.id;
-    req.userRole = user.role;
-    next();
-  } catch (error) {
-    console.error('Auth error:', error);
-    res.status(500).json({ message: "Authentication error" });
-  }
+  req.userId = req.session.userId;
+  console.log('Authentication successful for user:', req.userId);
+  next();
 };
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -80,47 +72,58 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 // Email notification helpers
-export async function sendWelcomeEmail(email: string, username: string): Promise<void> {
+export async function sendWelcomeEmail(
+  email: string,
+  username: string
+): Promise<void> {
   try {
     const template = emailTemplates.welcomeEmail(username);
-    await sendEmail({
+    const emailSent = await sendEmail({
       to: email,
       from: 'noreply@elitestock.com', // Replace with verified sender
       subject: template.subject,
       text: template.text,
       html: template.html,
     });
+
+    if (!emailSent) {
+      console.warn('Welcome email not sent - continuing with registration');
+    }
   } catch (error) {
     console.error('Failed to send welcome email:', error);
-    // Don't throw error to prevent blocking user registration
+    // Don't throw error - let registration continue
   }
 }
 
 export async function sendTransactionEmail(
-  email: string, 
-  type: 'deposit' | 'withdrawal', 
-  amount: string, 
-  asset: string = 'USD'
+  email: string,
+  type: 'deposit' | 'withdrawal',
+  amount: string
 ): Promise<void> {
   try {
-    const template = type === 'deposit' 
-      ? emailTemplates.depositConfirmation(amount, asset)
-      : emailTemplates.withdrawalRequest(amount, asset);
+    const template = type === 'deposit'
+      ? emailTemplates.depositConfirmation(amount, 'USD')
+      : emailTemplates.withdrawalRequest(amount, 'USD');
 
-    await sendEmail({
+    const emailSent = await sendEmail({
       to: email,
       from: 'noreply@elitestock.com', // Replace with verified sender
       subject: template.subject,
       text: template.text,
       html: template.html,
     });
+
+    if (!emailSent) {
+      console.warn('Transaction email not sent - continuing with transaction');
+    }
   } catch (error) {
-    console.error(`Failed to send ${type} email:`, error);
+    console.error('Failed to send transaction email:', error);
+    // Don't throw error - let transaction continue
   }
 }
 
 export async function sendKycStatusEmail(
-  email: string, 
+  email: string,
   status: string
 ): Promise<void> {
   try {
