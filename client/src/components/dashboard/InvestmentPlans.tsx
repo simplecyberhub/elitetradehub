@@ -18,8 +18,8 @@ const InvestmentPlans = () => {
     <div className="bg-neutral-800 rounded-lg p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Investment Plans</h2>
-        <Link href="/investments">
-          <a className="text-primary text-sm hover:underline">View All Plans</a>
+        <Link href="/investments" className="text-primary text-sm hover:underline">
+          View All Plans
         </Link>
       </div>
 
@@ -32,7 +32,7 @@ const InvestmentPlans = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {plans?.map((plan: any, index: number) => {
+          {(plans as any[])?.map((plan: any, index: number) => {
             const isPremium = plan.name === "Premium";
             
             return (

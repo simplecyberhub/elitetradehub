@@ -25,6 +25,10 @@ const InvestmentPlansPage = () => {
   const [investmentAmount, setInvestmentAmount] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const { data: plans = [], isLoading: isLoadingPlans } = useQuery({
+    queryKey: ["/api/investment-plans"],
+  });
+
   // Parse plan ID from URL if present
   useEffect(() => {
     if (!location || !plans || !Array.isArray(plans)) return;
@@ -44,10 +48,6 @@ const InvestmentPlansPage = () => {
       }
     }
   }, [location, plans]);
-
-  const { data: plans = [], isLoading: isLoadingPlans } = useQuery({
-    queryKey: ["/api/investment-plans"],
-  });
 
   const { data: userInvestments, isLoading: isLoadingInvestments } = useQuery({
     queryKey: [`/api/user/${user?.id}/investments`],
