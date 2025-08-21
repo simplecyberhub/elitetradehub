@@ -124,6 +124,9 @@ export async function sendKycStatusEmail(
 
 // Rate limiting and security headers
 export function configureSecurity(app: Express) {
+  // Enable trust proxy to fix rate limiting issues
+  app.set('trust proxy', 1);
+  
   // Security headers
   app.use(helmet({
     contentSecurityPolicy: {
