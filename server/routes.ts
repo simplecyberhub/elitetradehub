@@ -210,6 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const { username, password } = req.body;
+      console.log("Login attempt for username:", username);
 
       if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required" });
@@ -218,16 +219,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storageInstance.getUserByUsername(username);
 
       if (!user || user.password !== password) {
+        console.log("Invalid credentials for username:", username);
         return res.status(401).json({ message: "Invalid username or password" });
       }
 
       // Ensure session is properly initialized
       if (!req.session) {
+        console.error("Session not initialized");
         return res.status(500).json({ message: "Session not initialized" });
       }
 
       // Set user session
       req.session.userId = user.id;
+      req.session.userRole = user.role;
+
+      console.log("Setting session - User ID:", user.id, "Session ID:", req.sessionID);
 
       // Save session explicitly
       req.session.save((err) => {
@@ -237,6 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         console.log("Session saved successfully for user:", user.id);
+        console.log("Session data:", { userId: req.session.userId, userRole: req.session.userRole });
 
         // Return user data (excluding password)
         const { password: _, ...userWithoutPassword } = user;
@@ -261,17 +268,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     try {
-      console.log('Auth check - Session:', req.session?.userId);
+      console.log('Me endpoint - Session exists:', !!req.session);
+      console.log('Me endpoint - Session ID:', req.sessionID);
+      console.log('Me endpoint - User ID:', req.session?.userId);
 
       if (!req.session || !req.session.userId) {
+        console.log('Me endpoint - No session or userId');
         return res.status(401).json({ message: 'Authentication required' });
       }
 
       const user = await storageInstance.getUser(req.session.userId);
       if (!user) {
+        console.log('Me endpoint - User not found for ID:', req.session.userId);
         return res.status(404).json({ message: "User not found" });
       }
 
+      console.log('Me endpoint - User found:', user.username);
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {

@@ -24,15 +24,16 @@ export function configureSession(app: Express) {
 
   app.use(session({
     secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: {
       secure: false, // Set to false for development
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       sameSite: 'lax'
     },
-    store: new session.MemoryStore()
+    store: new session.MemoryStore(),
+    name: 'sessionId'
   }));
 }
 
@@ -48,14 +49,18 @@ export async function validatePassword(password: string, hash: string): Promise<
 
 // Authentication middleware
 export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
-  console.log('Auth check - Session:', req.session?.userId, 'Headers:', req.headers['x-user-id']);
+  console.log('Auth check - Session exists:', !!req.session);
+  console.log('Auth check - Session ID:', req.sessionID);
+  console.log('Auth check - User ID:', req.session?.userId);
 
   // Ensure session exists and has userId
   if (!req.session || !req.session.userId) {
+    console.log('Authentication failed - no session or userId');
     return res.status(401).json({ message: 'Authentication required' });
   }
 
   req.userId = req.session.userId;
+  console.log('Authentication successful for user:', req.userId);
   next();
 };
 
