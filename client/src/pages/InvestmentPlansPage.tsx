@@ -28,13 +28,13 @@ const InvestmentPlansPage = () => {
   // Parse plan ID from URL if present
   useEffect(() => {
     if (!location || !plans || !Array.isArray(plans)) return;
-    
+
     const queryString = location.split('?')[1];
     if (!queryString) return;
-    
+
     const params = new URLSearchParams(queryString);
     const planId = params.get('plan');
-    
+
     if (planId) {
       const plan = plans.find((p: any) => p.id === parseInt(planId));
       if (plan) {
@@ -45,7 +45,7 @@ const InvestmentPlansPage = () => {
     }
   }, [location, plans]);
 
-  const { data: plans, isLoading: isLoadingPlans } = useQuery({
+  const { data: plans = [], isLoading: isLoadingPlans } = useQuery({
     queryKey: ["/api/investment-plans"],
   });
 
