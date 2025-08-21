@@ -1,0 +1,84 @@
+[vite] connecting...
+[vite] connected.
+API Request: GET /api/auth/me 
+API Response: GET /api/auth/me 
+Object {status: 401, ok: false, statusText: "Unauthorized"}
+ok: false
+status: 401
+statusText: "Unauthorized"
+[[Prototype]]: Object
+API Error: GET /api/auth/me 
+Object {status: 401, error: "{"message":"Authentication required"}"}
+error: "{"message":"Authentication required"}"
+status: 401
+[[Prototype]]: Object
+
+at t.value (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+API Request: POST /api/auth/login 
+Object {data: {…}}
+API Response: POST /api/auth/login 
+Object {status: 200, ok: true, statusText: "OK"}
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at a
+    at https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8bf5fd19:337:18
+    at div
+    at QuickLinks
+    at div
+    at Dashboard (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/src/pages/Dashboard.tsx:30:20)
+    at Route (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8bf5fd19:323:16)
+    at Switch (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8bf5fd19:379:17)
+    at div
+    at main
+    at div
+    at AppContent (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/src/App.tsx?v=EbeYgiaKrSpXvFXB19AgZ:316:31)
+    at Provider (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PLT6GTVM.js?v=8bf5fd19:38:15)
+    at TooltipProvider (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=8bf5fd19:62:5)
+    at QueryClientProvider (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=8bf5fd19:2805:3)
+    at AuthProvider (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/src/context/AuthContext.tsx:22:32)
+    at App
+at a
+at a
+at https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8bf5fd19:337:18
+at div
+at QuickLinks
+at div
+at Dashboard (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/src/pages/Dashboard.tsx:30:20)
+at Route (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8bf5fd19:323:16)
+at Switch (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8bf5fd19:379:17)
+at div
+at main
+at div
+at AppContent (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/src/App.tsx?v=EbeYgiaKrSpXvFXB19AgZ:316:31)
+at Provider (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PLT6GTVM.js?v=8bf5fd19:38:15)
+at TooltipProvider (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=8bf5fd19:62:5)
+at QueryClientProvider (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=8bf5fd19:2805:3)
+at AuthProvider (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/src/context/AuthContext.tsx:22:32)
+at App
+at t.value (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://f07b2c67-2ba1-4a83-bc83-0d194bbd8927-00-2kq5o2y85075i.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Submit button clicked
+Form errors: 
+Object {}
+Form values: 
+Object {amount: "1000", cardNumber: "", cardName: "", expiryDate: "", cvv: "", …}
+Form is valid: false
+Submit button clicked
+Form errors: 
+Object {email: {…}}
+Form values: 
+Object {amount: "1000", cardNumber: "", cardName: "", expiryDate: "", cvv: "", …}
+Form is valid: false
+Submit button clicked
+Form errors: 
+Object {email: {…}}
+Form values: 
+Object {amount: "1000", cardNumber: "", cardName: "", expiryDate: "", cvv: "", …}
+Form is valid: false
+Submit button clicked
+
