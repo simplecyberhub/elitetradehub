@@ -1,4 +1,3 @@
-
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq, desc, and } from "drizzle-orm";
@@ -135,13 +134,13 @@ export class DbStorage implements IStorage {
 
   async createCopyRelationship(relationship: InsertCopyRelationship): Promise<CopyRelationship> {
     const result = await this.db.insert(copyRelationships).values(relationship).returning();
-    
+
     // Update trader followers count
     const trader = await this.getTrader(relationship.traderId);
     if (trader) {
       await this.updateTrader(trader.id, { followers: trader.followers + 1 });
     }
-    
+
     return result[0];
   }
 
@@ -227,7 +226,7 @@ export class DbStorage implements IStorage {
             // Calculate allocation
             const allocationPercentage = parseFloat(follower.allocationPercentage.toString()) / 100;
             const followerAmount = amount * allocationPercentage;
-            
+
             // Create copy trade for follower
             await this.createTrade({
               userId: follower.followerId,
@@ -283,8 +282,8 @@ export class DbStorage implements IStorage {
     const user = await this.getUser(investment.userId);
     if (user) {
       await this.updateUserBalance(
-        user.id, 
-        parseFloat(investment.amount.toString()), 
+        user.id,
+        parseFloat(investment.amount.toString()),
         false
       );
     }
@@ -399,7 +398,7 @@ export class DbStorage implements IStorage {
     const existing = await this.db.select().from(watchlistItems)
       .where(and(eq(watchlistItems.userId, item.userId), eq(watchlistItems.assetId, item.assetId)))
       .limit(1);
-    
+
     if (existing.length > 0) {
       return existing[0];
     }

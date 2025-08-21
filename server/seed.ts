@@ -131,8 +131,6 @@ export async function seedDatabase(storage: DbStorage) {
     throw error;
   }
 }
-import { storage } from './storage';
-import { hashPassword } from './auth';
 
 export async function seedDatabase() {
   try {

@@ -1,4 +1,3 @@
-
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -19,12 +18,13 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAuth, AuthProvider } from "./context/AuthContext";
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 function LoginForm() {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,52 +32,123 @@ function LoginForm() {
     const username = formData.get("username") as string;
     const password = formData.get("password") as string;
 
-    login(username, password);
+    if (isRegistering) {
+      const email = formData.get("email") as string;
+      const firstName = formData.get("firstName") as string;
+      const lastName = formData.get("lastName") as string;
+      register(username, password, email, firstName, lastName);
+    } else {
+      login(username, password);
+    }
   };
 
   return (
-    <div className="bg-neutral-800 p-8 rounded-lg shadow-lg w-full max-w-md">
-      <div className="flex items-center justify-center mb-6">
-        <span className="text-primary text-3xl mr-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-            <polyline points="16 7 22 7 22 13"></polyline>
-          </svg>
-        </span>
-        <h1 className="text-2xl font-bold text-white">EliteStock</h1>
+    <div className="w-full max-w-md mx-auto bg-neutral-800 rounded-lg p-6">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-white mb-2">📈 EliteStock</h2>
+        <p className="text-neutral-400">
+          {isRegistering ? "Create your account" : "Log in to your account"}
+        </p>
       </div>
-      <h2 className="text-xl font-semibold mb-6 text-center">Log in to your account</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="username" className="block text-sm font-medium mb-1">Username</label>
-          <input 
-            type="text" 
-            id="username" 
-            name="username" 
-            className="w-full p-2 bg-neutral-700 border border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            defaultValue="demo"
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium text-neutral-200 mb-1">
+            Username
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
             required
+            className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder="Enter your username"
           />
         </div>
-        <div className="mb-6">
-          <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            name="password" 
-            className="w-full p-2 bg-neutral-700 border border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            defaultValue="password"
+
+        {isRegistering && (
+          <>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-neutral-200 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Enter your email"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-neutral-200 mb-1">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  required
+                  className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="First name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-neutral-200 mb-1">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  required
+                  className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-neutral-200 mb-1">
+            Password
+          </label>
+          <input
+            type="password"
+            id="password"
+            name="password"
             required
+            className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder="Enter your password"
           />
         </div>
-        <button 
-          type="submit" 
-          className="w-full bg-primary hover:bg-primary/90 py-2 rounded-md text-white font-medium"
+
+        <button
+          type="submit"
+          className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors font-medium"
         >
-          Log In
+          {isRegistering ? "Register" : "Log In"}
         </button>
       </form>
-      <div className="mt-4 text-center text-sm text-muted-foreground">
+
+      <div className="mt-4 text-center">
+        <button
+          type="button"
+          onClick={() => setIsRegistering(!isRegistering)}
+          className="text-primary hover:text-primary/80 text-sm font-medium"
+        >
+          {isRegistering
+            ? "Already have an account? Log in"
+            : "Don't have an account? Register"}
+        </button>
+      </div>
+
+      <div className="mt-6 text-center text-sm text-neutral-400">
         <p>Use demo/password to log in or admin/admin123 for admin access</p>
       </div>
     </div>
