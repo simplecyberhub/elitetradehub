@@ -37,7 +37,7 @@ const depositFormSchema = z.object({
   routingNumber: z.string().optional(),
   bankName: z.string().optional(),
   walletAddress: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().email().optional().or(z.literal('')),
 });
 
 type DepositFormValues = z.infer<typeof depositFormSchema>;

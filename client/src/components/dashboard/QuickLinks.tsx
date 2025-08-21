@@ -39,16 +39,18 @@ const QuickLinks = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {quickLinks.map((link, index) => (
-        <Link key={index} href={link.href}>
-          <a className="bg-neutral-800 p-4 rounded-lg hover:bg-neutral-700 transition-colors flex items-center gap-3">
-            <span className={`h-10 w-10 ${link.color} bg-opacity-20 rounded-full flex items-center justify-center`}>
-              {link.icon}
-            </span>
-            <div>
-              <h3 className="font-medium">{link.title}</h3>
-              <p className="text-xs text-neutral-400">{link.description}</p>
-            </div>
-          </a>
+        <Link 
+          key={index} 
+          href={link.href}
+          className="bg-neutral-800 p-4 rounded-lg hover:bg-neutral-700 transition-colors flex items-center gap-3"
+        >
+          <span className={`h-10 w-10 ${link.color} bg-opacity-20 rounded-full flex items-center justify-center`}>
+            {link.icon}
+          </span>
+          <div>
+            <h3 className="font-medium">{link.title}</h3>
+            <p className="text-xs text-neutral-400">{link.description}</p>
+          </div>
         </Link>
       ))}
     </div>
