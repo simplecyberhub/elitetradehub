@@ -162,9 +162,12 @@ const CopyTrading = () => {
                 </div>
               </div>
               <div className="flex justify-between">
-                <Link href={`/copy-trading?trader=${trader.id}`}>
-                  <a className="text-xs text-neutral-400 hover:text-white">View Profile</a>
-                </Link>
+                <button
+                  className="text-xs text-neutral-400 hover:text-white cursor-pointer bg-transparent border-none p-0"
+                  onClick={() => window.location.href = `/copy-trading?trader=${trader.id}`}
+                >
+                  View Profile
+                </button>
                 <Button
                   size="sm"
                   variant={isFollowing(trader.id) ? "default" : "outline"}

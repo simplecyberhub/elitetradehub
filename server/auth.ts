@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { Express, Request, Response, NextFunction } from 'express';
 import { pool } from './db';
 import { sendEmail, emailTemplates } from './email';
+import { storage } from './storage';
 
 // Extend session data interface
 declare module 'express-session' {
@@ -31,7 +32,7 @@ export function configureSession(app: Express) {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       sameSite: 'lax'
     },
-    store: new (require('express-session').MemoryStore)()
+    store: new session.MemoryStore()
   }));
 }
 
