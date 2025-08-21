@@ -92,7 +92,7 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
     },
   });
 
-  const onSubmit = (values: DepositFormValues) => {
+  const onSubmit = async (values: DepositFormValues) => {
     console.log("Form submit triggered with values:", values);
     
     if (!user) {
@@ -117,11 +117,15 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
 
     console.log("Submitting deposit:", { userId: user.id, amount: values.amount, method });
 
-    depositMutation.mutate({
-      userId: user.id,
-      amount: values.amount,
-      method,
-    });
+    try {
+      await depositMutation.mutateAsync({
+        userId: user.id,
+        amount: values.amount,
+        method,
+      });
+    } catch (error) {
+      console.error("Deposit submission error:", error);
+    }
   };
 
   if (isSuccess) {
@@ -490,6 +494,10 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
           type="submit" 
           className="w-full"
           disabled={depositMutation.isPending}
+          onClick={(e) => {
+            console.log("Submit button clicked");
+            // Let the form handle the submission naturally
+          }}
         >
           {depositMutation.isPending ? (
             <>
