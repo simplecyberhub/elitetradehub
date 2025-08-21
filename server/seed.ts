@@ -131,3 +131,116 @@ export async function seedDatabase(storage: DbStorage) {
     throw error;
   }
 }
+import { storage } from './storage';
+import { hashPassword } from './auth';
+
+export async function seedDatabase() {
+  try {
+    const storageInstance = await storage;
+    
+    // Check if admin user already exists
+    const existingAdmin = await storageInstance.getUserByUsername('admin');
+    
+    if (!existingAdmin) {
+      // Create admin user
+      const hashedPassword = await hashPassword('admin123');
+      const adminUser = await storageInstance.createUser({
+        username: 'admin',
+        email: 'admin@example.com',
+        password: hashedPassword,
+        role: 'admin',
+        balance: '10000',
+        firstName: 'Admin',
+        lastName: 'User',
+        kycStatus: 'verified'
+      });
+      
+      console.log('Admin user created:', adminUser.username);
+    }
+    
+    // Check if we have assets
+    const assets = await storageInstance.getAssets();
+    
+    if (assets.length === 0) {
+      // Create sample assets
+      const sampleAssets = [
+        {
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          type: 'stock' as const,
+          currentPrice: '150.25',
+          change: '2.15',
+          changePercent: '1.45'
+        },
+        {
+          symbol: 'BTC',
+          name: 'Bitcoin',
+          type: 'crypto' as const,
+          currentPrice: '45000.00',
+          change: '1250.00',
+          changePercent: '2.85'
+        },
+        {
+          symbol: 'EURUSD',
+          name: 'Euro to USD',
+          type: 'forex' as const,
+          currentPrice: '1.0850',
+          change: '0.0025',
+          changePercent: '0.23'
+        }
+      ];
+      
+      for (const asset of sampleAssets) {
+        await storageInstance.createAsset(asset);
+      }
+      
+      console.log('Sample assets created');
+    }
+    
+    // Check if we have investment plans
+    const plans = await storageInstance.getInvestmentPlans();
+    
+    if (plans.length === 0) {
+      // Create sample investment plans
+      const samplePlans = [
+        {
+          name: 'Starter Plan',
+          description: 'Perfect for beginners',
+          minAmount: '100',
+          maxAmount: '1000',
+          returnRate: '5.5',
+          duration: 30,
+          riskLevel: 'low' as const
+        },
+        {
+          name: 'Growth Plan',
+          description: 'For moderate investors',
+          minAmount: '1000',
+          maxAmount: '10000',
+          returnRate: '12.0',
+          duration: 90,
+          riskLevel: 'medium' as const
+        },
+        {
+          name: 'Premium Plan',
+          description: 'For experienced investors',
+          minAmount: '10000',
+          maxAmount: null,
+          returnRate: '18.5',
+          duration: 180,
+          riskLevel: 'high' as const
+        }
+      ];
+      
+      for (const plan of samplePlans) {
+        await storageInstance.createInvestmentPlan(plan);
+      }
+      
+      console.log('Sample investment plans created');
+    }
+    
+  } catch (error) {
+    console.error('Error seeding database:', error);
+    throw error;
+  }
+}

@@ -413,6 +413,18 @@ export class DbStorage implements IStorage {
     return result.length > 0;
   }
 
+  // Asset operations
+  async createAsset(asset: InsertAsset): Promise<Asset> {
+    const result = await this.db.insert(assets).values(asset).returning();
+    return result[0];
+  }
+
+  // Investment plan operations
+  async createInvestmentPlan(plan: InsertInvestmentPlan): Promise<InvestmentPlan> {
+    const result = await this.db.insert(investmentPlans).values(plan).returning();
+    return result[0];
+  }
+
   // Admin operations
   async getAllUsers(): Promise<User[]> {
     return await this.db.select().from(users);
