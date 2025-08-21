@@ -7,6 +7,7 @@ import { createDeposit } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { Upload, FileImage } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -38,6 +39,7 @@ const depositFormSchema = z.object({
   bankName: z.string().optional(),
   walletAddress: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
+  paymentNotes: z.string().optional(),
 });
 
 type DepositFormValues = z.infer<typeof depositFormSchema>;
@@ -50,6 +52,9 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
+  const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<DepositFormValues>({
     resolver: zodResolver(depositFormSchema),
@@ -64,13 +69,33 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
       bankName: "",
       walletAddress: "",
       email: "",
+      paymentNotes: "",
+    },
+  });
+
+  // File upload mutation
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('paymentProof', file);
+      
+      const response = await fetch('/api/upload/payment-proof', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload payment proof');
+      }
+      
+      return response.json();
     },
   });
 
   const depositMutation = useMutation({
-    mutationFn: (data: { userId: number; amount: number; method: string }) => {
+    mutationFn: (data: { userId: number; amount: number; method: string; paymentProofUrl?: string; paymentNotes?: string }) => {
       console.log("Creating deposit with data:", data);
-      return createDeposit(data.userId, data.amount, data.method);
+      return createDeposit(data.userId, data.amount, data.method, data.paymentProofUrl, data.paymentNotes);
     },
     onSuccess: (data) => {
       console.log("Deposit successful:", data);
@@ -91,6 +116,31 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
       });
     },
   });
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "Please select a file smaller than 5MB.",
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          variant: "destructive",
+          title: "Invalid file type",
+          description: "Please select an image file.",
+        });
+        return;
+      }
+      
+      setPaymentProofFile(file);
+    }
+  };
 
   const onSubmit = async (values: DepositFormValues) => {
     console.log("Form submit triggered with values:", values);
@@ -118,13 +168,27 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
     console.log("Submitting deposit:", { userId: user.id, amount: values.amount, method });
 
     try {
+      let uploadedProofUrl = null;
+      
+      // Upload payment proof first if provided
+      if (paymentProofFile) {
+        setIsUploading(true);
+        const uploadResult = await uploadMutation.mutateAsync(paymentProofFile);
+        uploadedProofUrl = uploadResult.fileUrl;
+        setPaymentProofUrl(uploadedProofUrl);
+        setIsUploading(false);
+      }
+      
       await depositMutation.mutateAsync({
         userId: user.id,
         amount: values.amount,
         method,
+        paymentProofUrl: uploadedProofUrl,
+        paymentNotes: values.paymentNotes,
       });
     } catch (error) {
       console.error("Deposit submission error:", error);
+      setIsUploading(false);
     }
   };
 
@@ -459,6 +523,89 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
             )}
           />
         )}
+
+        {/* Payment Proof Upload Section */}
+        <div className="bg-neutral-900/50 rounded-lg p-4 border border-neutral-800">
+          <h3 className="font-medium mb-3 flex items-center gap-2">
+            <FileImage className="h-4 w-4" />
+            Payment Proof Upload
+          </h3>
+          <p className="text-sm text-neutral-400 mb-4">
+            Upload a screenshot or receipt of your payment to speed up verification.
+          </p>
+          
+          <div className="space-y-4">
+            {!paymentProofFile && !paymentProofUrl ? (
+              <div className="border-2 border-dashed border-neutral-700 rounded-lg p-6 text-center hover:border-neutral-600 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="payment-proof-upload"
+                />
+                <label
+                  htmlFor="payment-proof-upload"
+                  className="cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <Upload className="h-8 w-8 text-neutral-400" />
+                  <div className="text-sm">
+                    <span className="text-primary hover:text-primary/80">Click to upload</span>
+                    <span className="text-neutral-400"> or drag and drop</span>
+                  </div>
+                  <p className="text-xs text-neutral-500">PNG, JPG, GIF up to 5MB</p>
+                </label>
+              </div>
+            ) : (
+              <div className="bg-neutral-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileImage className="h-5 w-5 text-green-400" />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {paymentProofFile?.name || "Payment proof uploaded"}
+                      </p>
+                      <p className="text-xs text-neutral-400">
+                        {paymentProofFile && `${(paymentProofFile.size / 1024).toFixed(1)} KB`}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setPaymentProofFile(null);
+                      setPaymentProofUrl(null);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <FormField
+              control={form.control}
+              name="paymentNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Any additional details about your payment..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Include transaction ID, reference number, or other relevant details
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         <div className="bg-neutral-900 rounded-lg p-4">
           <h3 className="font-medium mb-3">Deposit Summary</h3>

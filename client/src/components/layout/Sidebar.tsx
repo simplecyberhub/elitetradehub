@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -12,7 +13,9 @@ import {
   User,
   Receipt,
   Menu,
-  X
+  X,
+  Settings,
+  FileCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +34,13 @@ const navigation = [
 export default function Sidebar() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
+  
+  // Admin navigation items
+  const adminNavigation = [
+    { name: "Admin Dashboard", href: "/admin", icon: Settings },
+    { name: "Transaction Review", href: "/admin/transactions", icon: FileCheck },
+  ];
 
   return (
     <>
@@ -62,13 +72,38 @@ export default function Sidebar() {
                 const isActive = location === item.href;
                 return (
                   <li key={item.name}>
-                    <Link href={item.href} className="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                    <Link href={item.href} className="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-neutral-800">
                       <item.icon className="mr-3 h-5 w-5" />
                       {item.name}
                     </Link>
                   </li>
                 );
               })}
+              
+              {/* Admin Navigation Section */}
+              {user?.role === 'admin' && (
+                <>
+                  <li className="pt-4">
+                    <div className="px-3 py-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      Administration
+                    </div>
+                  </li>
+                  {adminNavigation.map((item) => {
+                    const isActive = location === item.href;
+                    return (
+                      <li key={item.name}>
+                        <Link href={item.href} className={cn(
+                          "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-neutral-800",
+                          isActive ? "bg-primary text-primary-foreground" : "text-neutral-300"
+                        )}>
+                          <item.icon className="mr-3 h-5 w-5" />
+                          {item.name}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </>
+              )}
             </ul>
           </nav>
         </div>

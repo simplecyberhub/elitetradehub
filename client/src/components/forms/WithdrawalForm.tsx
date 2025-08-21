@@ -29,12 +29,19 @@ const withdrawalFormSchema = z.object({
       .positive("Amount must be positive")
       .min(10, "Minimum withdrawal amount is $10")
   ),
+  // Bank transfer fields
   accountNumber: z.string().optional(),
   routingNumber: z.string().optional(),
   bankName: z.string().optional(),
   accountName: z.string().optional(),
+  swiftCode: z.string().optional(),
+  // Crypto fields
   walletAddress: z.string().optional(),
+  networkType: z.string().optional(),
+  // PayPal fields
   email: z.string().email().optional(),
+  // Additional withdrawal details
+  withdrawalNotes: z.string().optional(),
 });
 
 type WithdrawalFormValues = z.infer<typeof withdrawalFormSchema>;
@@ -58,14 +65,30 @@ const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ method }) => {
       routingNumber: "",
       bankName: "",
       accountName: "",
+      swiftCode: "",
       walletAddress: "",
+      networkType: "",
       email: "",
+      withdrawalNotes: "",
     },
   });
 
   const withdrawalMutation = useMutation({
-    mutationFn: (data: { userId: number; amount: number; method: string }) =>
-      createWithdrawal(data.userId, data.amount, data.method),
+    mutationFn: (data: {
+      userId: number;
+      amount: number;
+      method: string;
+      withdrawalAddress?: string;
+      withdrawalDetails?: string;
+      withdrawalNotes?: string;
+    }) => createWithdrawal(
+      data.userId,
+      data.amount,
+      data.method,
+      data.withdrawalAddress,
+      data.withdrawalDetails,
+      data.withdrawalNotes
+    ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/user/${user?.id}/transactions`] });
       queryClient.invalidateQueries({ queryKey: [`/api/user/${user?.id}`] });
@@ -97,10 +120,39 @@ const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ method }) => {
       return;
     }
     
+    // Prepare withdrawal destination info based on method
+    let withdrawalAddress = "";
+    let withdrawalDetails = "";
+    
+    if (method === "bank_transfer") {
+      withdrawalAddress = `${values.bankName} - ${values.accountNumber}`;
+      withdrawalDetails = JSON.stringify({
+        bankName: values.bankName,
+        accountName: values.accountName,
+        accountNumber: values.accountNumber,
+        routingNumber: values.routingNumber,
+        swiftCode: values.swiftCode,
+      });
+    } else if (method === "crypto") {
+      withdrawalAddress = values.walletAddress || "";
+      withdrawalDetails = JSON.stringify({
+        walletAddress: values.walletAddress,
+        networkType: values.networkType || "ERC-20",
+      });
+    } else if (method === "paypal") {
+      withdrawalAddress = values.email || "";
+      withdrawalDetails = JSON.stringify({
+        email: values.email,
+      });
+    }
+    
     withdrawalMutation.mutate({
       userId: user.id,
       amount: values.amount,
       method,
+      withdrawalAddress,
+      withdrawalDetails,
+      withdrawalNotes: values.withdrawalNotes,
     });
   };
 
@@ -245,29 +297,78 @@ const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ method }) => {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="swiftCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>SWIFT Code (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="For international transfers"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Required for international wire transfers
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </>
         )}
 
         {method === "crypto" && (
-          <FormField
-            control={form.control}
-            name="walletAddress"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Your Wallet Address</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Wallet address for receiving funds"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Please double-check your wallet address. Transactions cannot be reversed.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <>
+            <FormField
+              control={form.control}
+              name="walletAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Wallet Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Wallet address for receiving funds"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Please double-check your wallet address. Transactions cannot be reversed.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="networkType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Network Type</FormLabel>
+                  <FormControl>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-950 dark:ring-offset-neutral-950 dark:placeholder:text-neutral-400 dark:focus-visible:ring-neutral-300"
+                      {...field}
+                    >
+                      <option value="">Select network</option>
+                      <option value="ERC-20">ERC-20 (Ethereum)</option>
+                      <option value="BTC">Bitcoin Network</option>
+                      <option value="TRC-20">TRC-20 (Tron)</option>
+                      <option value="BSC">BNB Smart Chain</option>
+                      <option value="POLYGON">Polygon</option>
+                    </select>
+                  </FormControl>
+                  <FormDescription>
+                    Choose the correct network for your wallet
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         )}
 
         {method === "paypal" && (
@@ -292,6 +393,27 @@ const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ method }) => {
             )}
           />
         )}
+
+        {/* Withdrawal Notes Section - Common to all methods */}
+        <FormField
+          control={form.control}
+          name="withdrawalNotes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Additional Notes (Optional)</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Any special instructions or notes for your withdrawal..."
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Include any special instructions, reference numbers, or additional information
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="bg-neutral-900 rounded-lg p-4">
           <h3 className="font-medium mb-3">Withdrawal Summary</h3>

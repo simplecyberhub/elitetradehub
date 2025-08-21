@@ -63,8 +63,10 @@ export interface IStorage {
   // Transaction operations
   getTransaction(id: number): Promise<Transaction | undefined>;
   getTransactionsByUserId(userId: number): Promise<Transaction[]>;
+  getAllTransactions(status?: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: number, data: Partial<Transaction>): Promise<Transaction | undefined>;
+  reviewTransaction(id: number, status: string, reviewedBy: number, adminNotes?: string): Promise<Transaction | null>;
   completeTransaction(id: number): Promise<Transaction | undefined>;
 
   // KYC document operations
