@@ -93,7 +93,10 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
   });
 
   const onSubmit = (values: DepositFormValues) => {
+    console.log("Form submit triggered with values:", values);
+    
     if (!user) {
+      console.error("No user found during deposit submission");
       toast({
         variant: "destructive",
         title: "Authentication Error",

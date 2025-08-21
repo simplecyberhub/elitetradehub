@@ -47,29 +47,16 @@ export async function validatePassword(password: string, hash: string): Promise<
 }
 
 // Authentication middleware
-export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   console.log('Auth check - Session:', req.session?.userId, 'Headers:', req.headers['x-user-id']);
 
-  if (!req.session?.userId) {
-    return res.status(401).json({ message: "Authentication required" });
+  // Ensure session exists and has userId
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ message: 'Authentication required' });
   }
 
-  try {
-    const storageInstance = await storage;
-    const user = await storageInstance.getUser(req.session.userId);
-
-    if (!user) {
-      req.session.destroy(() => {});
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    req.userId = user.id;
-    req.userRole = user.role;
-    next();
-  } catch (error) {
-    console.error('Auth error:', error);
-    res.status(500).json({ message: "Authentication error" });
-  }
+  req.userId = req.session.userId;
+  next();
 };
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -97,13 +84,13 @@ export async function sendWelcomeEmail(email: string, username: string): Promise
 }
 
 export async function sendTransactionEmail(
-  email: string, 
-  type: 'deposit' | 'withdrawal', 
-  amount: string, 
+  email: string,
+  type: 'deposit' | 'withdrawal',
+  amount: string,
   asset: string = 'USD'
 ): Promise<void> {
   try {
-    const template = type === 'deposit' 
+    const template = type === 'deposit'
       ? emailTemplates.depositConfirmation(amount, asset)
       : emailTemplates.withdrawalRequest(amount, asset);
 
@@ -120,7 +107,7 @@ export async function sendTransactionEmail(
 }
 
 export async function sendKycStatusEmail(
-  email: string, 
+  email: string,
   status: string
 ): Promise<void> {
   try {

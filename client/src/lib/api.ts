@@ -166,21 +166,44 @@ export async function createDeposit(userId: number, amount: number, method: stri
   
   console.log("Deposit data being sent:", depositData);
   
-  const response = await apiRequest('POST', '/api/transactions', depositData);
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  try {
+    const response = await fetch('/api/transactions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(depositData),
+    });
+    
+    console.log("Raw response:", response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response body:", errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText || 'Unknown error' };
+      }
+      
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log("Deposit API response:", result);
+    
+    // Invalidate cache after successful deposit
+    queryClient.invalidateQueries({ queryKey: [`/api/user/${userId}/transactions`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/user/${userId}`] });
+    
+    return result;
+  } catch (error) {
+    console.error("Deposit API error:", error);
+    throw error;
   }
-  
-  // Invalidate transactions cache
-  queryClient.invalidateQueries({ queryKey: [`/api/user/${userId}/transactions`] });
-  // Invalidate user data to update balance
-  queryClient.invalidateQueries({ queryKey: [`/api/user/${userId}`] });
-  
-  const result = await response.json();
-  console.log("Deposit API response:", result);
-  return result;
 }
 
 export async function createWithdrawal(userId: number, amount: number, method: string) {
