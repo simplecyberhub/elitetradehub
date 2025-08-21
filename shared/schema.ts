@@ -128,24 +128,45 @@ export const insertInvestmentSchema = createInsertSchema(investments).omit({
   id: true,
 });
 
-// Transactions (deposits, withdrawals)
+// Transactions (deposits, withdrawals) with admin approval system
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   type: text("type").notNull(), // deposit, withdrawal
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  method: text("method").notNull(), // bank_transfer, credit_card, crypto, etc.
+  method: text("method").notNull(), // bank_transfer, credit_card, crypto, paypal, manual
   status: text("status").notNull(), // pending, completed, failed, canceled
   transactionRef: text("transaction_ref"),
+  // Payment proof for deposits
+  paymentProofUrl: text("payment_proof_url"),
+  paymentNotes: text("payment_notes"), // Manual deposit information
+  // Withdrawal destination details
+  withdrawalAddress: text("withdrawal_address"), // bank account, crypto wallet, etc.
+  withdrawalDetails: jsonb("withdrawal_details"), // bank name, routing number, wallet type
+  // Admin approval system
+  adminNotes: text("admin_notes"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
+  reviewedBy: true,
+  reviewedAt: true,
   createdAt: true,
   completedAt: true,
 });
+
+// Admin transaction review schema
+export const reviewTransactionSchema = z.object({
+  transactionId: z.number(),
+  action: z.enum(['approve', 'reject']),
+  adminNotes: z.string().optional(),
+});
+
+export type ReviewTransaction = z.infer<typeof reviewTransactionSchema>;
 
 // KYC Documents
 export const kycDocuments = pgTable("kyc_documents", {

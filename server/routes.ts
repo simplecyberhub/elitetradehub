@@ -6,7 +6,7 @@ import {
   insertUserSchema, insertAssetSchema, insertTraderSchema,
   insertCopyRelationshipSchema, insertTradeSchema, insertInvestmentPlanSchema,
   insertInvestmentSchema, insertTransactionSchema, insertKycDocumentSchema,
-  insertWatchlistItemSchema
+  insertWatchlistItemSchema, reviewTransactionSchema
 } from "@shared/schema";
 import {
   requireAuth, requireAdmin, hashPassword, validatePassword,
@@ -732,10 +732,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // File upload endpoint for payment proofs
+  app.post("/api/upload/payment-proof", async (req: Request, res: Response) => {
+    try {
+      // For now, simulate file upload by generating a unique filename
+      // In a real application, you would use a file upload middleware like multer
+      const fileName = `payment_proof_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+      const fileUrl = `/uploads/payment_proofs/${fileName}`;
+      
+      res.status(200).json({ 
+        message: "Payment proof uploaded successfully",
+        fileUrl: fileUrl,
+        fileName: fileName
+      });
+    } catch (error) {
+      console.error("File upload error:", error);
+      res.status(500).json({ message: "Failed to upload payment proof" });
+    }
+  });
+
   // Transaction routes
   app.post("/api/transactions", async (req: Request, res: Response) => {
     try {
       const validatedData = insertTransactionSchema.parse(req.body);
+      
+      // Ensure all new transactions start as pending
+      validatedData.status = "pending";
 
       // Check if user exists
       const user = await storageInstance.getUser(validatedData.userId);
@@ -762,18 +784,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.amount.toString()
       );
 
-      // Auto-complete deposits for demo purposes
-      if (validatedData.type === "deposit" && validatedData.status === "pending") {
-        try {
-          const completedTransaction = await storageInstance.completeTransaction(newTransaction.id);
-          if (completedTransaction) {
-            return res.status(201).json(completedTransaction);
-          }
-        } catch (error) {
-          // If completion fails, still return the created transaction
-          console.error("Transaction completion failed:", error);
-        }
-      }
+      // All transactions now require admin approval - no auto-completion
+      // Transaction remains in pending status until admin reviews
 
       res.status(201).json(newTransaction);
     } catch (error) {
@@ -800,6 +812,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json(transactions);
     } catch (error) {
       res.status(500).json({ message: "Failed to get transactions" });
+    }
+  });
+
+  // Admin transaction management endpoints
+  app.get("/api/admin/transactions", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // Get all transactions or filter by status
+      const status = req.query.status as string;
+      const transactions = await storageInstance.getAllTransactions(status);
+      
+      // Include user details for each transaction
+      const transactionsWithUsers = await Promise.all(
+        transactions.map(async (transaction) => {
+          const user = await storageInstance.getUser(transaction.userId);
+          return {
+            ...transaction,
+            user: {
+              id: user?.id,
+              username: user?.username,
+              email: user?.email,
+              fullName: user?.fullName
+            }
+          };
+        })
+      );
+
+      res.status(200).json(transactionsWithUsers);
+    } catch (error) {
+      console.error("Admin transactions error:", error);
+      res.status(500).json({ message: "Failed to get transactions" });
+    }
+  });
+
+  app.post("/api/admin/transactions/:id/review", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const transactionId = parseInt(req.params.id);
+      const { action, adminNotes } = reviewTransactionSchema.parse({ 
+        transactionId, 
+        action: req.body.action, 
+        adminNotes: req.body.adminNotes 
+      });
+
+      const adminUserId = req.session?.userId;
+      if (!adminUserId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const transaction = await storageInstance.getTransaction(transactionId);
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      if (transaction.status !== "pending") {
+        return res.status(400).json({ message: "Transaction is not pending" });
+      }
+
+      // Update transaction status based on admin action
+      const newStatus = action === "approve" ? "completed" : "failed";
+      const reviewedTransaction = await storageInstance.reviewTransaction(
+        transactionId,
+        newStatus,
+        adminUserId,
+        adminNotes
+      );
+
+      // If approved and it's a deposit, add funds to user balance
+      if (action === "approve" && transaction.type === "deposit") {
+        await storageInstance.updateUserBalance(
+          transaction.userId,
+          parseFloat(transaction.amount.toString()),
+          true
+        );
+      }
+
+      // If approved and it's a withdrawal, deduct funds from user balance
+      if (action === "approve" && transaction.type === "withdrawal") {
+        await storageInstance.updateUserBalance(
+          transaction.userId,
+          parseFloat(transaction.amount.toString()),
+          false
+        );
+      }
+
+      // Send email notification to user about status change
+      const user = await storageInstance.getUser(transaction.userId);
+      if (user) {
+        await sendTransactionEmail(
+          user.email,
+          transaction.type as 'deposit' | 'withdrawal',
+          transaction.amount.toString()
+        );
+      }
+
+      res.status(200).json(reviewedTransaction);
+    } catch (error) {
+      console.error("Transaction review error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to review transaction" });
+      }
     }
   });
 

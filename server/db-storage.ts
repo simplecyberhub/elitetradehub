@@ -316,6 +316,32 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async getAllTransactions(status?: string): Promise<Transaction[]> {
+    let query = this.db.select().from(transactions);
+    
+    if (status) {
+      query = query.where(eq(transactions.status, status));
+    }
+    
+    return await query.orderBy(desc(transactions.createdAt));
+  }
+
+  async reviewTransaction(id: number, status: string, reviewedBy: number, adminNotes?: string): Promise<Transaction | null> {
+    const result = await this.db
+      .update(transactions)
+      .set({
+        status,
+        adminNotes: adminNotes || null,
+        reviewedBy,
+        reviewedAt: new Date(),
+        completedAt: status === "completed" ? new Date() : null
+      })
+      .where(eq(transactions.id, id))
+      .returning();
+    
+    return result[0] || null;
+  }
+
   async completeTransaction(id: number): Promise<Transaction | undefined> {
     const transaction = await this.getTransaction(id);
     if (!transaction || transaction.status !== "pending") return undefined;
@@ -331,13 +357,9 @@ export class DbStorage implements IStorage {
       await this.updateUserBalance(user.id, amount, false);
     }
 
-    // Update transaction
-    const completedTransaction = await this.updateTransaction(id, {
-      status: "completed",
-      completedAt: new Date()
-    });
-
-    return completedTransaction;
+    // Update transaction using the new review method
+    const completedTransaction = await this.reviewTransaction(id, "completed", 1, "Auto-completed");
+    return completedTransaction || undefined;
   }
 
   // KYC document operations
@@ -412,17 +434,6 @@ export class DbStorage implements IStorage {
     return result.length > 0;
   }
 
-  // Asset operations
-  async createAsset(asset: any): Promise<any> {
-    const result = await this.db.insert(assets).values(asset).returning();
-    return result[0];
-  }
-
-  // Investment plan operations  
-  async createInvestmentPlan(plan: any): Promise<any> {
-    const result = await this.db.insert(investmentPlans).values(plan).returning();
-    return result[0];
-  }
 
   // Admin operations
   async getAllUsers(): Promise<User[]> {

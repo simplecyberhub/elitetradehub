@@ -152,8 +152,8 @@ export async function fetchUserInvestments(userId: number) {
 }
 
 // Transaction functions
-export async function createDeposit(userId: number, amount: number, method: string) {
-  console.log("Creating deposit API call:", { userId, amount, method });
+export async function createDeposit(userId: number, amount: number, method: string, paymentProofUrl?: string, paymentNotes?: string) {
+  console.log("Creating deposit API call:", { userId, amount, method, paymentProofUrl, paymentNotes });
   
   const depositData = {
     userId,
@@ -161,7 +161,9 @@ export async function createDeposit(userId: number, amount: number, method: stri
     amount: amount.toString(),
     method,
     status: 'pending',
-    transactionRef: `DEP${Date.now()}`
+    transactionRef: `DEP${Date.now()}`,
+    paymentProofUrl: paymentProofUrl || null,
+    paymentNotes: paymentNotes || null
   };
   
   console.log("Deposit data being sent:", depositData);
@@ -206,14 +208,24 @@ export async function createDeposit(userId: number, amount: number, method: stri
   }
 }
 
-export async function createWithdrawal(userId: number, amount: number, method: string) {
+export async function createWithdrawal(
+  userId: number, 
+  amount: number, 
+  method: string, 
+  withdrawalAddress?: string, 
+  withdrawalDetails?: string, 
+  withdrawalNotes?: string
+) {
   const response = await apiRequest('POST', '/api/transactions', {
     userId,
     type: 'withdrawal',
     amount: amount.toString(),
     method,
     status: 'pending',
-    transactionRef: `WD${Date.now()}`
+    transactionRef: `WD${Date.now()}`,
+    withdrawalAddress: withdrawalAddress || null,
+    withdrawalDetails: withdrawalDetails || null,
+    paymentNotes: withdrawalNotes || null
   });
   
   // Invalidate transactions cache
