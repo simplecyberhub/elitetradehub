@@ -132,7 +132,11 @@ export async function seedDatabase(storage: DbStorage) {
   }
 }
 
-export async function seedDatabase() {
+// Updated seedDatabase function that uses the original seeding logic
+export async function seedDatabaseNew() {
+  const { storage } = await import('./storage');
+  const { hashPassword } = await import('./auth');
+  
   try {
     const storageInstance = await storage;
     
@@ -140,59 +144,69 @@ export async function seedDatabase() {
     const existingAdmin = await storageInstance.getUserByUsername('admin');
     
     if (!existingAdmin) {
-      // Create admin user
+      // Create admin user with hashed password
       const hashedPassword = await hashPassword('admin123');
       const adminUser = await storageInstance.createUser({
         username: 'admin',
-        email: 'admin@example.com',
         password: hashedPassword,
-        role: 'admin',
-        balance: '10000',
-        firstName: 'Admin',
-        lastName: 'User',
-        kycStatus: 'verified'
+        email: 'admin@example.com',
+        fullName: 'Administrator',
       });
-      
+      await storageInstance.updateUser(adminUser.id, { role: 'admin' });
       console.log('Admin user created:', adminUser.username);
+    }
+    
+    // Check if demo user exists
+    const existingDemo = await storageInstance.getUserByUsername('demo');
+    if (!existingDemo) {
+      const hashedPassword = await hashPassword('password');
+      const demoUser = await storageInstance.createUser({
+        username: 'demo',
+        password: hashedPassword,
+        email: 'demo@example.com',
+        fullName: 'John Smith',
+      });
+      console.log('Demo user created:', demoUser.username);
     }
     
     // Check if we have assets
     const assets = await storageInstance.getAssets();
     
     if (assets.length === 0) {
-      // Create sample assets
-      const sampleAssets = [
-        {
-          symbol: 'AAPL',
-          name: 'Apple Inc.',
-          type: 'stock' as const,
-          currentPrice: '150.25',
-          change: '2.15',
-          changePercent: '1.45'
-        },
-        {
-          symbol: 'BTC',
-          name: 'Bitcoin',
-          type: 'crypto' as const,
-          currentPrice: '45000.00',
-          change: '1250.00',
-          changePercent: '2.85'
-        },
-        {
-          symbol: 'EURUSD',
-          name: 'Euro to USD',
-          type: 'forex' as const,
-          currentPrice: '1.0850',
-          change: '0.0025',
-          changePercent: '0.23'
-        }
+      // Create sample stock assets
+      const stockAssets = [
+        { symbol: "AAPL", name: "Apple Inc.", type: "stock" as const, price: "182.63", change24h: "1.45", volume24h: "34567890", marketCap: "2987654321", logoUrl: "" },
+        { symbol: "MSFT", name: "Microsoft Corporation", type: "stock" as const, price: "334.27", change24h: "0.75", volume24h: "12345678", marketCap: "2498765432", logoUrl: "" },
+        { symbol: "GOOGL", name: "Alphabet Inc.", type: "stock" as const, price: "134.99", change24h: "-0.32", volume24h: "5432109", marketCap: "1765432109", logoUrl: "" },
+        { symbol: "TSLA", name: "Tesla Inc.", type: "stock" as const, price: "238.45", change24h: "-2.07", volume24h: "20987654", marketCap: "756432109", logoUrl: "" }
       ];
       
-      for (const asset of sampleAssets) {
+      for (const asset of stockAssets) {
         await storageInstance.createAsset(asset);
       }
+      console.log('Stock assets created');
+
+      // Create crypto assets
+      const cryptoAssets = [
+        { symbol: "BTC/USD", name: "Bitcoin", type: "crypto" as const, price: "38245.86", change24h: "3.24", volume24h: "28765432109", marketCap: "765432198765", logoUrl: "" },
+        { symbol: "ETH/USD", name: "Ethereum", type: "crypto" as const, price: "2256.78", change24h: "2.87", volume24h: "15678901234", marketCap: "265432198765", logoUrl: "" }
+      ];
       
-      console.log('Sample assets created');
+      for (const asset of cryptoAssets) {
+        await storageInstance.createAsset(asset);
+      }
+      console.log('Crypto assets created');
+
+      // Create forex assets  
+      const forexAssets = [
+        { symbol: "EUR/USD", name: "Euro/US Dollar", type: "forex" as const, price: "1.0742", change24h: "-0.23", volume24h: "98765432109", marketCap: "0", logoUrl: "" },
+        { symbol: "GBP/USD", name: "British Pound/US Dollar", type: "forex" as const, price: "1.2654", change24h: "0.12", volume24h: "5432109876", marketCap: "0", logoUrl: "" }
+      ];
+      
+      for (const asset of forexAssets) {
+        await storageInstance.createAsset(asset);
+      }
+      console.log('Forex assets created');
     }
     
     // Check if we have investment plans
@@ -200,43 +214,43 @@ export async function seedDatabase() {
     
     if (plans.length === 0) {
       // Create sample investment plans
-      const samplePlans = [
+      const investmentPlans = [
         {
-          name: 'Starter Plan',
-          description: 'Perfect for beginners',
-          minAmount: '100',
-          maxAmount: '1000',
-          returnRate: '5.5',
-          duration: 30,
-          riskLevel: 'low' as const
+          name: "Starter",
+          description: "Perfect for beginners",
+          minAmount: "100",
+          maxAmount: "999",
+          roiPercentage: "7.0",
+          lockPeriodDays: 30,
+          features: ["6-8% Monthly ROI", "24/7 Support", "30-day lock period"]
         },
         {
-          name: 'Growth Plan',
-          description: 'For moderate investors',
-          minAmount: '1000',
-          maxAmount: '10000',
-          returnRate: '12.0',
-          duration: 90,
-          riskLevel: 'medium' as const
+          name: "Premium",
+          description: "For intermediate traders", 
+          minAmount: "1000",
+          maxAmount: "9999",
+          roiPercentage: "11.0",
+          lockPeriodDays: 15,
+          features: ["10-12% Monthly ROI", "Priority Support", "15-day lock period"]
         },
         {
-          name: 'Premium Plan',
-          description: 'For experienced investors',
-          minAmount: '10000',
+          name: "Elite",
+          description: "For professional investors",
+          minAmount: "10000",
           maxAmount: null,
-          returnRate: '18.5',
-          duration: 180,
-          riskLevel: 'high' as const
+          roiPercentage: "16.5", 
+          lockPeriodDays: 7,
+          features: ["15-18% Monthly ROI", "Dedicated Account Manager", "7-day lock period"]
         }
       ];
       
-      for (const plan of samplePlans) {
+      for (const plan of investmentPlans) {
         await storageInstance.createInvestmentPlan(plan);
       }
-      
-      console.log('Sample investment plans created');
+      console.log('Investment plans created');
     }
     
+    console.log('Database seeding completed successfully!');
   } catch (error) {
     console.error('Error seeding database:', error);
     throw error;

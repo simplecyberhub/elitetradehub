@@ -54,10 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await apiRequest("POST", "/api/auth/login", { username, password });
       const userData = await response.json();
-      
+
       // Session is now handled by server-side cookies
       setUser(userData);
-      
+
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.fullName}!`,
@@ -87,27 +87,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
     }
   };
-  
-  const register = async (userData: any) => {
+
+  const register = async (username: string, password: string, email: string, firstName: string, lastName: string) => {
     try {
-      const response = await apiRequest("POST", "/api/auth/register", userData);
-      const newUserData = await response.json();
-      
-      // User is automatically logged in after registration
-      setUser(newUserData);
-      
-      toast({
-        title: "Registration successful",
-        description: `Welcome to EliteStock, ${newUserData.fullName}!`,
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          email,
+          fullName: `${firstName} ${lastName}`,
+        }),
+        credentials: 'include'
       });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        toast({
+          title: "Registration successful",
+          description: "Welcome to EliteStock!",
+        });
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Registration failed",
+          description: errorData.message || "Please try again",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Registration failed:", error);
       toast({
-        variant: "destructive",
         title: "Registration failed",
-        description: "Failed to create account. Please try again.",
+        description: "Network error. Please try again.",
+        variant: "destructive",
       });
-      throw error;
     }
   };
 
@@ -117,11 +135,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await apiRequest("PATCH", `/api/user/${user.id}`, userData);
       const updatedUserData = await response.json();
-      
+
       // Update user in state only (session handles persistence)
       const newUserData = { ...user, ...updatedUserData };
       setUser(newUserData);
-      
+
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",

@@ -39,8 +39,8 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize database and seed data
   try {
-    const { seedDatabase } = await import('./seed');
-    await seedDatabase();
+    const { seedDatabaseNew } = await import('./seed');
+    await seedDatabaseNew();
     log('Database seeded successfully');
   } catch (error) {
     log('Error seeding database:', error);
