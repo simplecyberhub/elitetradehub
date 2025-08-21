@@ -72,42 +72,53 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 // Email notification helpers
-export async function sendWelcomeEmail(email: string, username: string): Promise<void> {
+export async function sendWelcomeEmail(
+  email: string,
+  username: string
+): Promise<void> {
   try {
     const template = emailTemplates.welcomeEmail(username);
-    await sendEmail({
+    const emailSent = await sendEmail({
       to: email,
       from: 'noreply@elitestock.com', // Replace with verified sender
       subject: template.subject,
       text: template.text,
       html: template.html,
     });
+
+    if (!emailSent) {
+      console.warn('Welcome email not sent - continuing with registration');
+    }
   } catch (error) {
     console.error('Failed to send welcome email:', error);
-    // Don't throw error to prevent blocking user registration
+    // Don't throw error - let registration continue
   }
 }
 
 export async function sendTransactionEmail(
   email: string,
   type: 'deposit' | 'withdrawal',
-  amount: string,
-  asset: string = 'USD'
+  amount: string
 ): Promise<void> {
   try {
     const template = type === 'deposit'
-      ? emailTemplates.depositConfirmation(amount, asset)
-      : emailTemplates.withdrawalRequest(amount, asset);
+      ? emailTemplates.depositConfirmation(amount, 'USD')
+      : emailTemplates.withdrawalRequest(amount, 'USD');
 
-    await sendEmail({
+    const emailSent = await sendEmail({
       to: email,
       from: 'noreply@elitestock.com', // Replace with verified sender
       subject: template.subject,
       text: template.text,
       html: template.html,
     });
+
+    if (!emailSent) {
+      console.warn('Transaction email not sent - continuing with transaction');
+    }
   } catch (error) {
-    console.error(`Failed to send ${type} email:`, error);
+    console.error('Failed to send transaction email:', error);
+    // Don't throw error - let transaction continue
   }
 }
 
