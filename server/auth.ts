@@ -3,6 +3,7 @@ import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import validator from 'validator';
 import { Express, Request, Response, NextFunction } from 'express';
 import { pool } from './db';
 import { sendEmail, emailTemplates } from './email';
@@ -140,6 +141,53 @@ export async function sendKycStatusEmail(
   }
 }
 
+// Input validation and sanitization utilities
+export function validateEmail(email: string): boolean {
+  return validator.isEmail(email);
+}
+
+export function validateUsername(username: string): boolean {
+  return validator.isLength(username, { min: 3, max: 30 }) &&
+         validator.isAlphanumeric(username, 'en-US');
+}
+
+export function validatePasswordStrength(password: string): boolean {
+  return validator.isLength(password, { min: 8, max: 128 }) &&
+         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password);
+}
+
+export function sanitizeInput(input: string): string {
+  return validator.escape(validator.trim(input));
+}
+
+export function validateAmount(amount: string): boolean {
+  return validator.isNumeric(amount) && parseFloat(amount) > 0;
+}
+
+export function validatePhoneNumber(phone: string): boolean {
+  return validator.isMobilePhone(phone, 'any');
+}
+
+// Validation middleware
+export function validateInputs(validations: Record<string, (value: any) => boolean>) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const errors: string[] = [];
+    
+    Object.entries(validations).forEach(([field, validator]) => {
+      const value = req.body[field];
+      if (value !== undefined && !validator(value)) {
+        errors.push(`Invalid ${field}`);
+      }
+    });
+
+    if (errors.length > 0) {
+      return res.status(400).json({ message: 'Validation failed', errors });
+    }
+
+    next();
+  };
+}
+
 // Rate limiting and security headers
 export function configureSecurity(app: Express) {
   // Enable trust proxy to fix rate limiting issues
@@ -165,7 +213,7 @@ export function configureSecurity(app: Express) {
   // Rate limiting
   const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 500, // Increased for production usage
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -173,15 +221,24 @@ export function configureSecurity(app: Express) {
 
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 auth requests per windowMs
+    max: 10, // Slightly increased for usability
     message: 'Too many authentication attempts, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true,
   });
 
+  const tradingLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 20, // Allow 20 trades per minute
+    message: 'Trading rate limit exceeded, please wait before placing more orders.',
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
   app.use('/api/', generalLimiter);
   app.use('/api/auth/', authLimiter);
+  app.use('/api/trades', tradingLimiter);
 }
 
 // Extend Request interface to include userId

@@ -523,6 +523,13 @@ export class MemStorage implements IStorage {
       ...transaction,
       id,
       transactionRef: transaction.transactionRef || null,
+      paymentProofUrl: transaction.paymentProofUrl || null,
+      paymentNotes: transaction.paymentNotes || null,
+      withdrawalAddress: transaction.withdrawalAddress || null,
+      withdrawalDetails: transaction.withdrawalDetails || null,
+      adminNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
       createdAt: new Date(),
       completedAt: null
     };
@@ -537,6 +544,31 @@ export class MemStorage implements IStorage {
     const updatedTransaction = { ...transaction, ...data };
     this.transactionsTable.set(id, updatedTransaction);
     return updatedTransaction;
+  }
+
+  async getAllTransactions(status?: string): Promise<Transaction[]> {
+    const allTransactions = Array.from(this.transactionsTable.values());
+    if (status) {
+      return allTransactions
+        .filter((transaction) => transaction.status === status)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    }
+    return allTransactions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async reviewTransaction(id: number, status: string, reviewedBy: number, adminNotes?: string): Promise<Transaction | null> {
+    const transaction = await this.getTransaction(id);
+    if (!transaction) return null;
+
+    const reviewedTransaction = await this.updateTransaction(id, {
+      status,
+      adminNotes: adminNotes || null,
+      reviewedBy,
+      reviewedAt: new Date(),
+      completedAt: status === "completed" ? new Date() : transaction.completedAt
+    });
+
+    return reviewedTransaction || null;
   }
 
   async completeTransaction(id: number): Promise<Transaction | undefined> {
