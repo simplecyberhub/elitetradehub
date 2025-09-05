@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { marketDataService } from "./market-data";
 import { z } from "zod";
 import {
   insertUserSchema, insertAssetSchema, insertTraderSchema,
@@ -11,8 +12,13 @@ import {
 import {
   requireAuth, requireAdmin, hashPassword, validatePassword,
   sendWelcomeEmail, sendTransactionEmail, sendKycStatusEmail,
-  configureSession, configureSecurity
+  configureSession, configureSecurity, validateInputs, validateEmail,
+  validateUsername, validatePasswordStrength, validateAmount, sanitizeInput
 } from "./auth";
+import { 
+  errorHandler, asyncHandler, requestLogger, healthCheck,
+  ValidationError, AuthenticationError, ConflictError
+} from "./error-handler";
 
 // Authentication and security middleware configured in auth.ts
 
@@ -20,6 +26,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configure security and session management
   configureSecurity(app);
   configureSession(app);
+
+  // Add request logging
+  app.use(requestLogger);
+
+  // Health check endpoint
+  app.get('/health', healthCheck);
 
   // Initialize storage
   const storageInstance = await storage;
@@ -163,25 +175,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
-    try {
+  app.post("/api/auth/register", 
+    validateInputs({
+      username: validateUsername,
+      email: validateEmail,
+      password: validatePasswordStrength
+    }),
+    asyncHandler(async (req: Request, res: Response) => {
       const validatedData = insertUserSchema.parse(req.body);
 
+      // Sanitize inputs
+      const sanitizedData = {
+        ...validatedData,
+        username: sanitizeInput(validatedData.username),
+        email: sanitizeInput(validatedData.email).toLowerCase(),
+        fullName: sanitizeInput(validatedData.fullName)
+      };
+
       // Check if username or email already exists
-      const existingUser = await storageInstance.getUserByUsername(validatedData.username);
+      const existingUser = await storageInstance.getUserByUsername(sanitizedData.username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+        throw new ConflictError("Username already exists");
       }
 
-      const existingEmail = await storageInstance.getUserByEmail(validatedData.email);
+      const existingEmail = await storageInstance.getUserByEmail(sanitizedData.email);
       if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
+        throw new ConflictError("Email already exists");
       }
 
       // Hash password before storing
-      const hashedPassword = await hashPassword(validatedData.password);
+      const hashedPassword = await hashPassword(sanitizedData.password);
       const userDataWithHashedPassword = {
-        ...validatedData,
+        ...sanitizedData,
         password: hashedPassword
       };
 
@@ -197,43 +222,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't return password in response
       const { password, ...userWithoutPassword } = newUser;
       res.status(201).json(userWithoutPassword);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to create user" });
-      }
-    }
-  });
+    })
+  );
 
   // Login route
-  app.post("/api/auth/login", async (req: Request, res: Response) => {
-    try {
+  app.post("/api/auth/login", 
+    validateInputs({
+      username: (val) => typeof val === 'string' && val.length > 0,
+      password: (val) => typeof val === 'string' && val.length > 0
+    }),
+    asyncHandler(async (req: Request, res: Response) => {
       const { username, password } = req.body;
-      console.log("Login attempt for username:", username);
+      console.log("Login attempt for username:", sanitizeInput(username));
 
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-
-      const user = await storageInstance.getUserByUsername(username);
+      const sanitizedUsername = sanitizeInput(username);
+      const user = await storageInstance.getUserByUsername(sanitizedUsername);
 
       if (!user) {
-        console.log("User not found for username:", username);
-        return res.status(401).json({ message: "Invalid username or password" });
+        console.log("User not found for username:", sanitizedUsername);
+        throw new AuthenticationError("Invalid username or password");
       }
 
       // Validate password using bcrypt
       const isValidPassword = await validatePassword(password, user.password);
       if (!isValidPassword) {
-        console.log("Invalid password for username:", username);
-        return res.status(401).json({ message: "Invalid username or password" });
+        console.log("Invalid password for username:", sanitizedUsername);
+        throw new AuthenticationError("Invalid username or password");
       }
 
       // Ensure session is properly initialized
       if (!req.session) {
         console.error("Session not initialized");
-        return res.status(500).json({ message: "Session not initialized" });
+        throw new Error("Session not initialized");
       }
 
       // Set user session
@@ -246,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.save((err) => {
         if (err) {
           console.error("Session save error:", err);
-          return res.status(500).json({ message: "Session save failed" });
+          throw new Error("Session save failed");
         }
 
         console.log("Session saved successfully for user:", user.id);
@@ -256,11 +276,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { password: _, ...userWithoutPassword } = user;
         res.json(userWithoutPassword);
       });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+    })
+  );
 
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     req.session.destroy((err) => {
