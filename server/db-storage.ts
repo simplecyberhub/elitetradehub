@@ -1,6 +1,8 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq, desc, and } from "drizzle-orm";
+import dotenv from 'dotenv';
+dotenv.config();
 import {
   users, assets, traders, copyRelationships, trades,
   investmentPlans, investments, transactions, kycDocuments, watchlistItems,
