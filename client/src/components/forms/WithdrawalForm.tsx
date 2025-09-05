@@ -21,10 +21,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Define withdrawal form schema
+// Define withdrawal form schema - we'll add method-specific validation in the component
 const withdrawalFormSchema = z.object({
-  amount: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
+  amount: z.union([
+    z.string().transform((val) => parseFloat(val)),
+    z.number()
+  ]).pipe(
     z.number()
       .positive("Amount must be positive")
       .min(10, "Minimum withdrawal amount is $10")
@@ -39,7 +41,7 @@ const withdrawalFormSchema = z.object({
   walletAddress: z.string().optional(),
   networkType: z.string().optional(),
   // PayPal fields
-  email: z.string().email().optional(),
+  email: z.string().email().optional().or(z.literal("")),
   // Additional withdrawal details
   withdrawalNotes: z.string().optional(),
 });
@@ -107,8 +109,36 @@ const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ method }) => {
     },
   });
 
+  const validateMethodSpecificFields = (values: WithdrawalFormValues) => {
+    const errors: { [key: string]: string } = {};
+    
+    if (method === "bank_transfer") {
+      if (!values.bankName?.trim()) errors.bankName = "Bank name is required";
+      if (!values.accountName?.trim()) errors.accountName = "Account holder name is required";
+      if (!values.accountNumber?.trim()) errors.accountNumber = "Account number is required";
+      if (!values.routingNumber?.trim()) errors.routingNumber = "Routing number is required";
+    } else if (method === "crypto") {
+      if (!values.walletAddress?.trim()) errors.walletAddress = "Wallet address is required";
+      if (!values.networkType?.trim()) errors.networkType = "Network type is required";
+    } else if (method === "paypal") {
+      if (!values.email?.trim()) errors.email = "PayPal email is required";
+    }
+    
+    return errors;
+  };
+
   const onSubmit = (values: WithdrawalFormValues) => {
     if (!user) return;
+    
+    // Validate method-specific fields
+    const methodErrors = validateMethodSpecificFields(values);
+    if (Object.keys(methodErrors).length > 0) {
+      // Set form errors
+      Object.entries(methodErrors).forEach(([field, message]) => {
+        form.setError(field as keyof WithdrawalFormValues, { message });
+      });
+      return;
+    }
     
     // Check if user has enough balance
     if (values.amount > userBalance) {
