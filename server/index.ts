@@ -3,6 +3,9 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from 'cors'; // Import cors
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -54,7 +57,7 @@ app.use((req, res, next) => {
     await seedDatabaseNew();
     log('Database seeded successfully');
   } catch (error) {
-    log('Error seeding database:', error);
+    log(`Error seeding database: ${String(error)}`);
   }
 
   const server = await registerRoutes(app);
@@ -82,8 +85,8 @@ app.use((req, res, next) => {
   const port = 5000;
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "127.0.0.1",
+    reusePort: false,
   }, () => {
     log(`serving on port ${port}`);
   });
