@@ -174,6 +174,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export data endpoints
+  app.get("/api/admin/export/:type", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { type } = req.params;
+      let data: any[] = [];
+      let filename = '';
+
+      switch (type) {
+        case 'users':
+          data = await storageInstance.getAllUsers();
+          filename = 'users-export.csv';
+          break;
+        case 'transactions':
+          data = await storageInstance.getAllTransactions();
+          filename = 'transactions-export.csv';
+          break;
+        case 'trades':
+          data = await storageInstance.getAllTrades();
+          filename = 'trades-export.csv';
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid export type" });
+      }
+
+      // Convert to CSV
+      if (data.length === 0) {
+        return res.status(404).json({ message: "No data found" });
+      }
+
+      const csvHeaders = Object.keys(data[0]).filter(key => key !== 'password').join(',');
+      const csvRows = data.map(item => {
+        const { password, ...itemWithoutPassword } = item;
+        return Object.values(itemWithoutPassword).map(value => 
+          typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value
+        ).join(',');
+      });
+
+      const csvContent = [csvHeaders, ...csvRows].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csvContent);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
   // User routes
   app.post("/api/auth/register",
     validateInputs({
