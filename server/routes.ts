@@ -1001,7 +1001,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: `Maximum investment amount is ${maxAmount}` });
       }
 
+      // Create the investment
       const newInvestment = await storageInstance.createInvestment(validatedData);
+
+      // Create a transaction record for this investment
+      const investmentTransactionData = {
+        userId: validatedData.userId,
+        type: "investment" as const,
+        amount: validatedData.amount,
+        status: "completed" as const,
+        method: "balance",
+        description: `Investment in ${plan.name}`,
+        completedAt: new Date()
+      };
+
+      await storageInstance.createTransaction(investmentTransactionData);
+
+      // Deduct amount from user balance
+      await storageInstance.updateUserBalance(validatedData.userId, investmentAmount, false);
+
       res.status(201).json(newInvestment);
     } catch (error) {
       if (error instanceof z.ZodError) {

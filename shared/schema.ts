@@ -138,21 +138,15 @@ export const insertInvestmentSchema = createInsertSchema(investments, {
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
-  type: text("type").notNull(), // deposit, withdrawal
+  type: text("type").notNull(), // deposit, withdrawal, investment
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  method: text("method").notNull(), // bank_transfer, credit_card, crypto, paypal, manual
-  status: text("status").notNull(), // pending, completed, failed, canceled
-  transactionRef: text("transaction_ref"),
-  // Payment proof for deposits
-  paymentProofUrl: text("payment_proof_url"),
-  paymentNotes: text("payment_notes"), // Manual deposit information
-  // Withdrawal destination details
-  withdrawalAddress: text("withdrawal_address"), // bank account, crypto wallet, etc.
-  withdrawalDetails: jsonb("withdrawal_details"), // bank name, routing number, wallet type
-  // Admin approval system
+  status: text("status").notNull(), // pending, completed, failed
+  method: text("method"), // bank_transfer, crypto, balance, etc.
+  paymentProof: text("payment_proof"),
   adminNotes: text("admin_notes"),
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
+  description: text("description"), // Additional description for investments
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
 });
