@@ -45,7 +45,7 @@ const Transactions = () => {
       return transaction.type === "investment" || transaction.subType === "investment";
     }
     if (filter === "trade") {
-      return transaction.type === "trade" || transaction.subType === "trade";
+      return transaction.type === "trade" || transaction.subType === "buy" || transaction.subType === "sell";
     }
     return transaction.type.toLowerCase() === filter.toLowerCase();
   });
@@ -86,9 +86,21 @@ const Transactions = () => {
   // Helper to format transaction amount
   const formatAmount = (transaction: any) => {
     const amount = parseFloat(transaction.amount);
-    const isNegative = transaction.type === "withdrawal" || 
-                      transaction.type === "investment" || 
-                      transaction.subType === "investment";
+    let isNegative = false;
+    
+    if (transaction.type === "withdrawal" || 
+        transaction.type === "investment" || 
+        transaction.subType === "investment") {
+      isNegative = true;
+    } else if (transaction.type === "trade") {
+      // For trades, show the trade value (amount * price if available)
+      const tradeValue = transaction.price ? amount * parseFloat(transaction.price) : amount;
+      return (
+        <span className="text-blue-400">
+          ${Math.abs(tradeValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+      );
+    }
     
     return (
       <span className={isNegative ? "text-destructive" : "text-success"}>
@@ -252,8 +264,8 @@ const Transactions = () => {
                               <div className="flex-grow">
                                 <div className="flex justify-between">
                                   <h4 className="font-medium capitalize">
-                                    {transaction.type === "trade" || transaction.subType === "trade"
-                                      ? `Trade - ${transaction.assetSymbol || "Asset"}`
+                                    {transaction.type === "trade"
+                                      ? `${transaction.subType ? transaction.subType.toUpperCase() : "Trade"} - ${transaction.assetSymbol || "Asset"}`
                                       : transaction.type === "investment" || transaction.subType === "investment"
                                       ? "Investment"
                                       : `${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}`}
@@ -262,19 +274,29 @@ const Transactions = () => {
                                 </div>
                                 <div className="flex justify-between">
                                   <div className="text-sm text-neutral-400">
-                                    {transaction.description && (
-                                      <span className="text-xs text-neutral-500">{transaction.description}</span>
-                                    )}
-                                    {transaction.method && !transaction.description && (transaction.type !== "investment" && transaction.subType !== "investment") && (
-                                      <span className="capitalize">{transaction.method.replace("_", " ")}</span>
-                                    )}
-                                    {(transaction.type === "investment" || transaction.subType === "investment") && !transaction.description && (
-                                      <span className="text-xs text-neutral-500">Investment Plan</span>
-                                    )}
-                                    {transaction.assetSymbol && transaction.type === "trade" && (
-                                      <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded ml-2">
-                                        {transaction.assetSymbol}
-                                      </span>
+                                    {transaction.type === "trade" ? (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-neutral-500">
+                                          {transaction.amount} {transaction.assetSymbol ? transaction.assetSymbol.split('/')[0] : "Units"} @ ${parseFloat(transaction.price || 0).toFixed(2)}
+                                        </span>
+                                        {transaction.assetSymbol && (
+                                          <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">
+                                            {transaction.assetSymbol}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <>
+                                        {transaction.description && (
+                                          <span className="text-xs text-neutral-500">{transaction.description}</span>
+                                        )}
+                                        {transaction.method && !transaction.description && (transaction.type !== "investment" && transaction.subType !== "investment") && (
+                                          <span className="capitalize">{transaction.method.replace("_", " ")}</span>
+                                        )}
+                                        {(transaction.type === "investment" || transaction.subType === "investment") && !transaction.description && (
+                                          <span className="text-xs text-neutral-500">Investment Plan</span>
+                                        )}
+                                      </>
                                     )}
                                   </div>
                                   <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusBadge(transaction.status)}`}>
