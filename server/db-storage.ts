@@ -281,6 +281,10 @@ export class DbStorage implements IStorage {
     if (updateData.lockPeriodDays) {
       updateData.lockPeriodDays = parseInt(updateData.lockPeriodDays.toString());
     }
+    // Ensure status is properly handled
+    if (updateData.status) {
+      updateData.status = updateData.status.toString();
+    }
 
     const [updatedPlan] = await this.db
       .update(investmentPlans)
