@@ -1,4 +1,3 @@
-
 -- Create users table
 CREATE TABLE IF NOT EXISTS "users" (
 	"id" serial PRIMARY KEY NOT NULL,
@@ -31,7 +30,7 @@ CREATE TABLE IF NOT EXISTS "assets" (
 );
 
 -- Add is_active column if it doesn't exist (for existing databases)
-DO $$ 
+DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='assets' AND column_name='is_active') THEN
         ALTER TABLE "assets" ADD COLUMN "is_active" boolean DEFAULT true NOT NULL;
@@ -138,7 +137,27 @@ CREATE TABLE IF NOT EXISTS "watchlist_items" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 
--- Create session table for express-session
+-- Platform settings table
+CREATE TABLE IF NOT EXISTS "settings" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"key" text NOT NULL,
+	"value" text NOT NULL,
+	"description" text,
+	"category" text NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "settings_key_unique" UNIQUE("key")
+);
+
+-- Insert default settings
+INSERT INTO "settings" ("key", "value", "description", "category") VALUES
+('trading_min_amount', '10.00', 'Minimum trade amount', 'trading'),
+('trading_max_amount', '10000.00', 'Maximum trade amount', 'trading'),
+('trading_fee_percentage', '0.1', 'Trading fee percentage', 'trading'),
+('smtp_host', 'smtp.gmail.com', 'SMTP server host', 'email'),
+('smtp_port', '587', 'SMTP server port', 'email'),
+('from_email', 'noreply@elitestock.com', 'From email address', 'email');
+
+-- Sessions table for express-session
 CREATE TABLE IF NOT EXISTS "session" (
 	"sid" varchar PRIMARY KEY NOT NULL,
 	"sess" jsonb NOT NULL,

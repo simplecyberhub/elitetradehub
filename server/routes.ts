@@ -353,6 +353,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Settings management endpoints
+  app.get("/api/admin/settings", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const allSettings = await storageInstance.getAllSettings();
+      
+      // Group settings by category for easier frontend handling
+      const groupedSettings = allSettings.reduce((acc, setting) => {
+        if (!acc[setting.category]) {
+          acc[setting.category] = {};
+        }
+        acc[setting.category][setting.key] = setting.value;
+        return acc;
+      }, {} as Record<string, Record<string, string>>);
+
+      res.status(200).json(groupedSettings);
+    } catch (error) {
+      console.error("Get settings error:", error);
+      res.status(500).json({ message: "Failed to get settings" });
+    }
+  });
+
+  app.post("/api/admin/settings", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const settingsData = req.body;
+      const updatedSettings = [];
+
+      // Update each setting
+      for (const [category, categorySettings] of Object.entries(settingsData)) {
+        for (const [key, value] of Object.entries(categorySettings as Record<string, string>)) {
+          const updatedSetting = await storageInstance.updateSetting(key, value);
+          if (updatedSetting) {
+            updatedSettings.push(updatedSetting);
+          }
+        }
+      }
+
+      res.status(200).json({
+        message: "Settings updated successfully",
+        updatedCount: updatedSettings.length
+      });
+    } catch (error) {
+      console.error("Update settings error:", error);
+      res.status(500).json({ message: "Failed to update settings" });
+    }
+  });
+
   // Export data endpoints
   app.get("/api/admin/export/:type", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {

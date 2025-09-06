@@ -118,6 +118,21 @@ export default function AdminDashboard() {
   });
   const [showNewAssetDialog, setShowNewAssetDialog] = useState(false);
   const [showNewInvestmentPlanDialog, setShowNewInvestmentPlanDialog] = useState(false);
+  
+  // Settings state
+  const [systemSettings, setSystemSettings] = useState({
+    trading: {
+      trading_min_amount: '10.00',
+      trading_max_amount: '10000.00',
+      trading_fee_percentage: '0.1'
+    },
+    email: {
+      smtp_host: 'smtp.gmail.com',
+      smtp_port: '587',
+      from_email: 'noreply@elitestock.com'
+    }
+  });
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
 
   // Check if user is admin
@@ -170,7 +185,8 @@ export default function AdminDashboard() {
         safeFetch("/api/admin/trades", setTrades, []),
         safeFetch("/api/admin/transactions", setTransactions, []),
         safeFetch("/api/admin/assets", setAssets, []),
-        safeFetch("/api/admin/investment-plans", setInvestmentPlans, [])
+        safeFetch("/api/admin/investment-plans", setInvestmentPlans, []),
+        safeFetch("/api/admin/settings", setSystemSettings, systemSettings)
       ]);
 
     } catch (error) {
@@ -498,6 +514,54 @@ export default function AdminDashboard() {
       status: plan.isActive ? 'active' : 'inactive', // Map isActive to status
     });
     setEditingPlan(plan);
+  };
+
+  const saveSettings = async () => {
+    try {
+      setSettingsLoading(true);
+      
+      const response = await apiRequest("POST", "/api/admin/settings", systemSettings, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Settings saved successfully"
+        });
+      } else {
+        throw new Error('Failed to save settings');
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save settings"
+      });
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const resetSettingsToDefault = () => {
+    setSystemSettings({
+      trading: {
+        trading_min_amount: '10.00',
+        trading_max_amount: '10000.00',
+        trading_fee_percentage: '0.1'
+      },
+      email: {
+        smtp_host: 'smtp.gmail.com',
+        smtp_port: '587',
+        from_email: 'noreply@elitestock.com'
+      }
+    });
+    
+    toast({
+      title: "Settings Reset",
+      description: "Settings have been reset to default values"
+    });
   };
 
   if (loading) {
@@ -1330,15 +1394,39 @@ export default function AdminDashboard() {
                     <CardContent className="space-y-4">
                       <div>
                         <Label>Minimum Trade Amount</Label>
-                        <Input type="number" placeholder="10.00" />
+                        <Input 
+                          type="number" 
+                          value={systemSettings.trading.trading_min_amount}
+                          onChange={(e) => setSystemSettings(prev => ({
+                            ...prev,
+                            trading: { ...prev.trading, trading_min_amount: e.target.value }
+                          }))}
+                          placeholder="10.00" 
+                        />
                       </div>
                       <div>
                         <Label>Maximum Trade Amount</Label>
-                        <Input type="number" placeholder="10000.00" />
+                        <Input 
+                          type="number" 
+                          value={systemSettings.trading.trading_max_amount}
+                          onChange={(e) => setSystemSettings(prev => ({
+                            ...prev,
+                            trading: { ...prev.trading, trading_max_amount: e.target.value }
+                          }))}
+                          placeholder="10000.00" 
+                        />
                       </div>
                       <div>
                         <Label>Trading Fee (%)</Label>
-                        <Input type="number" placeholder="0.1" />
+                        <Input 
+                          type="number" 
+                          value={systemSettings.trading.trading_fee_percentage}
+                          onChange={(e) => setSystemSettings(prev => ({
+                            ...prev,
+                            trading: { ...prev.trading, trading_fee_percentage: e.target.value }
+                          }))}
+                          placeholder="0.1" 
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -1350,23 +1438,46 @@ export default function AdminDashboard() {
                     <CardContent className="space-y-4">
                       <div>
                         <Label>SMTP Host</Label>
-                        <Input placeholder="smtp.gmail.com" />
+                        <Input 
+                          value={systemSettings.email.smtp_host}
+                          onChange={(e) => setSystemSettings(prev => ({
+                            ...prev,
+                            email: { ...prev.email, smtp_host: e.target.value }
+                          }))}
+                          placeholder="smtp.gmail.com" 
+                        />
                       </div>
                       <div>
                         <Label>SMTP Port</Label>
-                        <Input placeholder="587" />
+                        <Input 
+                          value={systemSettings.email.smtp_port}
+                          onChange={(e) => setSystemSettings(prev => ({
+                            ...prev,
+                            email: { ...prev.email, smtp_port: e.target.value }
+                          }))}
+                          placeholder="587" 
+                        />
                       </div>
                       <div>
                         <Label>From Email</Label>
-                        <Input placeholder="noreply@elitestock.com" />
+                        <Input 
+                          value={systemSettings.email.from_email}
+                          onChange={(e) => setSystemSettings(prev => ({
+                            ...prev,
+                            email: { ...prev.email, from_email: e.target.value }
+                          }))}
+                          placeholder="noreply@elitestock.com" 
+                        />
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
                 <div className="space-x-2">
-                  <Button>Save Settings</Button>
-                  <Button variant="outline">Reset to Default</Button>
+                  <Button onClick={saveSettings} disabled={settingsLoading}>
+                    {settingsLoading ? "Saving..." : "Save Settings"}
+                  </Button>
+                  <Button variant="outline" onClick={resetSettingsToDefault}>Reset to Default</Button>
                 </div>
               </CardContent>
             </Card>
