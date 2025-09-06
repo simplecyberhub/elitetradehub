@@ -5,9 +5,12 @@ import ProfileForm from "@/components/forms/ProfileForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
   
   // Get user initials for avatar
   const getInitials = (name: string) => {
@@ -16,6 +19,22 @@ const Profile = () => {
       .map((part) => part[0])
       .join("")
       .toUpperCase();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to logout",
+      });
+    }
   };
   
   return (
@@ -247,9 +266,18 @@ const Profile = () => {
                             </span>
                           </div>
                         </div>
-                        <button className="text-destructive text-sm hover:underline">
-                          Log Out All Other Devices
-                        </button>
+                        <div className="flex gap-2">
+                          <button className="text-destructive text-sm hover:underline">
+                            Log Out All Other Devices
+                          </button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={handleLogout}
+                          >
+                            Logout
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="border-t border-neutral-700 pt-4">

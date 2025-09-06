@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const CopyTradingPage = () => {
   const { user } = useAuth();
@@ -17,7 +18,7 @@ const CopyTradingPage = () => {
   const [location, setLocation] = useLocation();
   const [selectedTrader, setSelectedTrader] = useState<any>(null);
   const [allocationPercentage, setAllocationPercentage] = useState(100);
-  
+
   // Parse trader ID from URL if present
   useEffect(() => {
     const params = new URLSearchParams(location.split('?')[1]);
@@ -32,17 +33,17 @@ const CopyTradingPage = () => {
       }
     }
   }, [location]);
-  
+
   const { data: traders, isLoading: isLoadingTraders } = useQuery({
     queryKey: ["/api/traders"],
     enabled: !!user?.id
   });
-  
+
   const { data: copyRelationships, isLoading: isLoadingRelationships } = useQuery({
     queryKey: [`/api/user/${user?.id}/copy-trading`],
     enabled: !!user?.id
   });
-  
+
   const startCopyMutation = useMutation({
     mutationFn: ({ followerId, traderId, allocation }: { followerId: number, traderId: number, allocation: number }) => 
       startCopyTrading(followerId, traderId, allocation),
@@ -61,7 +62,7 @@ const CopyTradingPage = () => {
       });
     }
   });
-  
+
   const stopCopyMutation = useMutation({
     mutationFn: ({ id, followerId }: { id: number, followerId: number }) => 
       stopCopyTrading(id, followerId),
@@ -80,7 +81,7 @@ const CopyTradingPage = () => {
       });
     }
   });
-  
+
   const updateCopyMutation = useMutation({
     mutationFn: ({ id, followerId, data }: { id: number, followerId: number, data: any }) => 
       updateCopyTrading(id, followerId, data),
@@ -99,7 +100,7 @@ const CopyTradingPage = () => {
       });
     }
   });
-  
+
   // Helper function to check if user is following a trader
   const isFollowing = (traderId: number) => {
     if (!copyRelationships) return false;
@@ -107,17 +108,17 @@ const CopyTradingPage = () => {
       relationship.trader.id === traderId && relationship.status === "active"
     );
   };
-  
+
   // Get relationship for a trader
   const getRelationship = (traderId: number) => {
     if (!copyRelationships) return null;
     return copyRelationships.find((r: any) => r.trader.id === traderId);
   };
-  
+
   // Handle copy button click
   const handleCopyClick = (trader: any) => {
     if (!user) return;
-    
+
     if (isFollowing(trader.id)) {
       const relationship = getRelationship(trader.id);
       if (relationship) {
@@ -131,11 +132,11 @@ const CopyTradingPage = () => {
       });
     }
   };
-  
+
   // Handle allocation change
   const handleAllocationChange = (trader: any) => {
     if (!user) return;
-    
+
     const relationship = getRelationship(trader.id);
     if (relationship) {
       updateCopyMutation.mutate({ 
@@ -145,7 +146,7 @@ const CopyTradingPage = () => {
       });
     }
   };
-  
+
   // Get initials from name
   const getInitials = (name: string) => {
     return name
@@ -154,7 +155,24 @@ const CopyTradingPage = () => {
       .join("")
       .toUpperCase();
   };
-  
+
+  // Generate sample performance data
+  const generatePerformanceData = () => {
+    const data = [];
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      data.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        profit: Math.random() * 1000 + 500
+      });
+    }
+    return data;
+  };
+
   // When a trader is selected, set allocation to current value
   useEffect(() => {
     if (selectedTrader) {
@@ -166,25 +184,25 @@ const CopyTradingPage = () => {
       }
     }
   }, [selectedTrader, copyRelationships]);
-  
+
   return (
     <>
       <Helmet>
         <title>Copy Trading | EliteStock Trading Platform</title>
         <meta name="description" content="Copy successful traders and automatically replicate their trading strategies on EliteStock Trading Platform." />
       </Helmet>
-      
+
       <div>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Copy Trading</h1>
           <p className="text-neutral-400">Copy successful traders and automatically replicate their trading strategies</p>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Trader List */}
           <div className="bg-neutral-800 rounded-lg p-4">
             <h2 className="text-lg font-semibold mb-4">Top Traders</h2>
-            
+
             {isLoadingTraders ? (
               <div className="flex justify-center py-8">
                 <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -263,7 +281,7 @@ const CopyTradingPage = () => {
               </div>
             )}
           </div>
-          
+
           {/* Trader Details */}
           <div className="lg:col-span-2">
             {selectedTrader ? (
@@ -302,7 +320,7 @@ const CopyTradingPage = () => {
                     {isFollowing(selectedTrader.id) ? "Stop Copying" : "Start Copying"}
                   </Button>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div className="bg-neutral-900 rounded-lg p-4">
                     <h3 className="text-lg font-semibold mb-2">Win Rate</h3>
@@ -315,7 +333,7 @@ const CopyTradingPage = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-neutral-900 rounded-lg p-4">
                     <h3 className="text-lg font-semibold mb-2">30-Day Profit</h3>
                     <div className="flex items-center">
@@ -327,7 +345,7 @@ const CopyTradingPage = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-neutral-900 rounded-lg p-4">
                     <h3 className="text-lg font-semibold mb-2">Risk Level</h3>
                     <div className="flex items-center">
@@ -340,12 +358,12 @@ const CopyTradingPage = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">About Trader</h3>
                   <p className="text-neutral-300">{selectedTrader.bio || "No bio provided."}</p>
                 </div>
-                
+
                 {isFollowing(selectedTrader.id) && (
                   <div className="bg-neutral-900 rounded-lg p-4 mb-6">
                     <h3 className="text-lg font-semibold mb-3">Copy Settings</h3>
@@ -377,7 +395,7 @@ const CopyTradingPage = () => {
                         This is the percentage of your balance that will be allocated to copy this trader's trades.
                       </p>
                     </div>
-                    
+
                     <Button 
                       onClick={() => handleAllocationChange(selectedTrader)}
                       disabled={updateCopyMutation.isPending}
@@ -386,12 +404,32 @@ const CopyTradingPage = () => {
                     </Button>
                   </div>
                 )}
-                
+
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Recent Performance</h3>
                   <div className="bg-neutral-900 rounded-lg p-4">
-                    <div className="h-64 flex items-center justify-center text-neutral-400">
-                      <p>Performance chart will be available soon</p>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={generatePerformanceData()}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <XAxis dataKey="date" stroke="#9CA3AF" />
+                          <YAxis stroke="#9CA3AF" />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#1F2937', 
+                              border: '1px solid #374151',
+                              borderRadius: '6px'
+                            }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="profit" 
+                            stroke="#10B981" 
+                            strokeWidth={2}
+                            dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 </div>

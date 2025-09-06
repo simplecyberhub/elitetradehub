@@ -307,13 +307,13 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     };
     this.copyRelationshipsTable.set(id, newRelationship);
-    
+
     // Update trader followers count
     const trader = await this.getTrader(relationship.traderId);
     if (trader) {
       await this.updateTrader(trader.id, { followers: trader.followers + 1 });
     }
-    
+
     return newRelationship;
   }
 
@@ -399,10 +399,22 @@ export class MemStorage implements IStorage {
       await this.updateUserBalance(user.id, totalCost, true);
     }
 
-    // Update trade status
+    // Execute the trade
     const executedTrade = await this.updateTrade(id, {
       status: "executed",
       executedAt: new Date()
+    });
+
+    // Create transaction record for the trade
+    await this.createTransaction({
+      userId: trade.userId,
+      type: "trade",
+      amount: trade.amount,
+      status: "completed",
+      method: "platform",
+      description: `${trade.type.toUpperCase()} ${trade.amount} of ${asset?.symbol || 'Asset'}`,
+      assetSymbol: asset?.symbol,
+      subType: trade.type
     });
 
     // If this is a trade from a trader being copied, create copies for followers
@@ -415,7 +427,7 @@ export class MemStorage implements IStorage {
             // Calculate allocation
             const allocationPercentage = parseFloat(follower.allocationPercentage.toString()) / 100;
             const followerAmount = amount * allocationPercentage;
-            
+
             // Create copy trade for follower
             await this.createTrade({
               userId: follower.followerId,
@@ -487,6 +499,10 @@ export class MemStorage implements IStorage {
     // Deduct amount from user balance
     const user = await this.getUser(investment.userId);
     if (user) {
+      // Check for sufficient balance before deducting
+      if (parseFloat(user.balance.toString()) < parseFloat(investment.amount.toString())) {
+        throw new Error("Insufficient balance");
+      }
       await this.updateUserBalance(
         user.id, 
         parseFloat(investment.amount.toString()), 
@@ -664,7 +680,7 @@ export class MemStorage implements IStorage {
     const existing = Array.from(this.watchlistItemsTable.values()).find(
       (existingItem) => existingItem.userId === item.userId && existingItem.assetId === item.assetId
     );
-    
+
     if (existing) {
       return existing;
     }
@@ -820,7 +836,7 @@ async function createStorage(): Promise<IStorage> {
   if (process.env.DATABASE_URL) {
     console.log("Using PostgreSQL database storage");
     const dbStorage = new DbStorage(process.env.DATABASE_URL);
-    
+
     // Check if database needs seeding (if no users exist)
     try {
       const existingUser = await dbStorage.getUserByUsername("demo");
@@ -831,7 +847,7 @@ async function createStorage(): Promise<IStorage> {
     } catch (error) {
       console.error("Error checking/seeding database:", error);
     }
-    
+
     return dbStorage;
   } else {
     console.log("Using in-memory storage (no DATABASE_URL found)");

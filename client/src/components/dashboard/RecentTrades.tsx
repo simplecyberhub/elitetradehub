@@ -102,7 +102,7 @@ const RecentTrades = () => {
                       </div>
                     </td>
                     <td className="py-3">
-                      <span className={`${trade.type === "buy" ? "text-success bg-success" : "text-destructive bg-destructive"} bg-opacity-10 px-2 py-0.5 rounded text-xs`}>
+                      <span className={`${trade.type === "buy" ? "text-success bg-success" : "text-orange-500 bg-orange-500"} bg-opacity-10 px-2 py-0.5 rounded text-xs`}>
                         {trade.type.toUpperCase()}
                       </span>
                     </td>
