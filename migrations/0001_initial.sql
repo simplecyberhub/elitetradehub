@@ -26,8 +26,17 @@ CREATE TABLE IF NOT EXISTS "assets" (
 	"volume_24h" numeric(20, 2),
 	"market_cap" numeric(20, 2),
 	"logo_url" text,
+	"is_active" boolean DEFAULT true NOT NULL,
 	CONSTRAINT "assets_symbol_unique" UNIQUE("symbol")
 );
+
+-- Add is_active column if it doesn't exist (for existing databases)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='assets' AND column_name='is_active') THEN
+        ALTER TABLE "assets" ADD COLUMN "is_active" boolean DEFAULT true NOT NULL;
+    END IF;
+END $$;
 
 -- Create traders table
 CREATE TABLE IF NOT EXISTS "traders" (
