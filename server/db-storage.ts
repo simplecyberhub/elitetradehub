@@ -278,7 +278,11 @@ export class DbStorage implements IStorage {
   }
 
   async getInvestmentPlans(): Promise<InvestmentPlan[]> {
-    return await this.db.select().from(investmentPlans).where(eq(investmentPlans.status, "active"));
+    return await this.db.select().from(investmentPlans).where(eq(investmentPlans.isActive, true));
+  }
+
+  async getAllInvestmentPlans(): Promise<InvestmentPlan[]> {
+    return await this.db.select().from(investmentPlans);
   }
 
   async createInvestmentPlan(plan: InsertInvestmentPlan): Promise<InvestmentPlan> {

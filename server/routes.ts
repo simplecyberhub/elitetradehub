@@ -193,6 +193,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin assets management
+  app.get("/api/admin/assets", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const assets = await storageInstance.getAssets();
+      res.status(200).json(assets);
+    } catch (error) {
+      console.error("Get admin assets error:", error);
+      res.status(500).json({ message: "Failed to get assets" });
+    }
+  });
+
+  app.post("/api/admin/assets", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertAssetSchema.parse({
+        symbol: req.body.symbol,
+        name: req.body.name,
+        type: req.body.type,
+        currentPrice: req.body.currentPrice,
+        isActive: true
+      });
+      const newAsset = await storageInstance.createAsset(validatedData);
+      res.status(201).json(newAsset);
+    } catch (error) {
+      console.error("Create asset error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create asset" });
+      }
+    }
+  });
+
+  app.patch("/api/admin/assets/:id", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const assetId = parseInt(req.params.id);
+      const updates = req.body;
+      const updatedAsset = await storageInstance.updateAsset(assetId, updates);
+      
+      if (!updatedAsset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      res.status(200).json(updatedAsset);
+    } catch (error) {
+      console.error("Update asset error:", error);
+      res.status(500).json({ message: "Failed to update asset" });
+    }
+  });
+
+  app.delete("/api/admin/assets/:id", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const assetId = parseInt(req.params.id);
+      const success = await storageInstance.deleteAsset(assetId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete asset error:", error);
+      res.status(500).json({ message: "Failed to delete asset" });
+    }
+  });
+
+  // Admin investment plans management
+  app.get("/api/admin/investment-plans", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const plans = await storageInstance.getAllInvestmentPlans();
+      res.status(200).json(plans);
+    } catch (error) {
+      console.error("Get admin investment plans error:", error);
+      res.status(500).json({ message: "Failed to get investment plans" });
+    }
+  });
+
+  app.post("/api/admin/investment-plans", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertInvestmentPlanSchema.parse({
+        name: req.body.name,
+        description: req.body.description,
+        minAmount: req.body.minAmount,
+        maxAmount: req.body.maxAmount,
+        expectedReturn: req.body.expectedReturn,
+        duration: req.body.duration,
+        isActive: req.body.isActive !== undefined ? req.body.isActive : true
+      });
+      const newPlan = await storageInstance.createInvestmentPlan(validatedData);
+      res.status(201).json(newPlan);
+    } catch (error) {
+      console.error("Create investment plan error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create investment plan" });
+      }
+    }
+  });
+
+  app.patch("/api/admin/investment-plans/:id", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const updates = req.body;
+      const updatedPlan = await storageInstance.updateInvestmentPlan(planId, updates);
+      
+      if (!updatedPlan) {
+        return res.status(404).json({ message: "Investment plan not found" });
+      }
+      
+      res.status(200).json(updatedPlan);
+    } catch (error) {
+      console.error("Update investment plan error:", error);
+      res.status(500).json({ message: "Failed to update investment plan" });
+    }
+  });
+
+  app.delete("/api/admin/investment-plans/:id", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const success = await storageInstance.deleteInvestmentPlan(planId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Investment plan not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete investment plan error:", error);
+      res.status(500).json({ message: "Failed to delete investment plan" });
+    }
+  });
+
   // Export data endpoints
   app.get("/api/admin/export/:type", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {

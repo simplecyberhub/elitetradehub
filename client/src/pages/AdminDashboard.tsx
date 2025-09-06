@@ -131,68 +131,44 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
 
-      // Fetch admin stats
-      const statsResponse = await apiRequest("GET", "/api/admin/stats", undefined, {
-        'X-User-Id': user.id.toString(),
-        'X-User-Role': user.role
-      });
-      const statsData = await statsResponse.json();
-      setStats(statsData);
+      // Helper function to safely fetch data
+      const safeFetch = async (url: string, setter: (data: any) => void, fallback: any = []) => {
+        try {
+          const response = await apiRequest("GET", url, undefined, {
+            'X-User-Id': user.id.toString(),
+            'X-User-Role': user.role
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setter(data);
+          } else {
+            console.warn(`Failed to fetch ${url}: ${response.status}`);
+            setter(fallback);
+          }
+        } catch (error) {
+          console.error(`Error fetching ${url}:`, error);
+          setter(fallback);
+        }
+      };
 
-      // Fetch users
-      const usersResponse = await apiRequest("GET", "/api/admin/users", undefined, {
-        'X-User-Id': user.id.toString(),
-        'X-User-Role': user.role
-      });
-      const usersData = await usersResponse.json();
-      setUsers(usersData);
-
-      // Fetch KYC documents
-      const kycResponse = await apiRequest("GET", "/api/admin/kyc-documents", undefined, {
-        'X-User-Id': user.id.toString(),
-        'X-User-Role': user.role
-      });
-      const kycData = await kycResponse.json();
-      setKycDocuments(kycData);
-
-      // Fetch all trades
-      const tradesResponse = await apiRequest("GET", "/api/admin/trades", undefined, {
-        'X-User-Id': user.id.toString(),
-        'X-User-Role': user.role
-      });
-      const tradesData = await tradesResponse.json();
-      setTrades(tradesData);
-
-      // Fetch all transactions
-      const transactionsResponse = await apiRequest("GET", "/api/admin/transactions", undefined, {
-        'X-User-Id': user.id.toString(),
-        'X-User-Role': user.role
-      });
-      const transactionsData = await transactionsResponse.json();
-      setTransactions(transactionsData);
-
-      // Fetch assets
-      const assetsResponse = await apiRequest("GET", "/api/admin/assets", undefined, {
-        'X-User-Id': user.id.toString(),
-        'X-User-Role': user.role
-      });
-      const assetsData = await assetsResponse.json();
-      setAssets(assetsData);
-
-      // Fetch investment plans
-      const plansResponse = await apiRequest("GET", "/api/admin/investment-plans", undefined, {
-        'X-User-Id': user.id.toString(),
-        'X-User-Role': user.role
-      });
-      const plansData = await plansResponse.json();
-      setInvestmentPlans(plansData);
+      // Fetch all data in parallel
+      await Promise.all([
+        safeFetch("/api/admin/stats", setStats, { totalUsers: 0, totalTrades: 0, totalInvestments: 0, pendingKyc: 0 }),
+        safeFetch("/api/admin/users", setUsers, []),
+        safeFetch("/api/admin/kyc-documents", setKycDocuments, []),
+        safeFetch("/api/admin/trades", setTrades, []),
+        safeFetch("/api/admin/transactions", setTransactions, []),
+        safeFetch("/api/admin/assets", setAssets, []),
+        safeFetch("/api/admin/investment-plans", setInvestmentPlans, [])
+      ]);
 
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load admin data"
+        description: "Failed to load some admin data"
       });
     } finally {
       setLoading(false);
