@@ -34,34 +34,38 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 const ProfileForm = () => {
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
-  
+
   // Default values from user context
   const defaultValues: Partial<ProfileFormValues> = {
     fullName: user?.fullName || "",
     email: user?.email || "",
-    phone: "",
-    address: "",
-    city: "",
-    country: "",
+    phone: user?.phone || "",
+    address: user?.address || "",
+    city: user?.city || "",
+    country: user?.country || "",
   };
-  
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues,
   });
-  
+
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  
+
   // Form submission handler
   async function onSubmit(data: ProfileFormValues) {
     setIsSubmitting(true);
-    
+
     try {
       await updateUser({
         fullName: data.fullName,
         email: data.email,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        country: data.country,
       });
-      
+
       toast({
         title: "Profile updated",
         description: "Your profile information has been updated successfully.",
@@ -77,7 +81,7 @@ const ProfileForm = () => {
       setIsSubmitting(false);
     }
   }
-  
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -95,7 +99,7 @@ const ProfileForm = () => {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="email"
@@ -109,7 +113,7 @@ const ProfileForm = () => {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="phone"
@@ -124,7 +128,7 @@ const ProfileForm = () => {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="address"
@@ -138,7 +142,7 @@ const ProfileForm = () => {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="city"
@@ -152,7 +156,7 @@ const ProfileForm = () => {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="country"
@@ -167,7 +171,7 @@ const ProfileForm = () => {
             )}
           />
         </div>
-        
+
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <span className="flex items-center">

@@ -116,7 +116,7 @@ const InvestmentPlansPage = () => {
     }
 
     // Validate user balance
-    const balance = parseFloat(user.balance);
+    const balance = parseFloat(user.balance || "0");
     if (amount > balance) {
       toast({
         variant: "destructive",

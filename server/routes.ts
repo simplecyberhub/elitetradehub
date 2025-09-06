@@ -15,7 +15,7 @@ import {
   configureSession, configureSecurity, validateInputs, validateEmail,
   validateUsername, validatePasswordStrength, validateAmount, sanitizeInput
 } from "./auth";
-import { 
+import {
   errorHandler, asyncHandler, requestLogger, healthCheck,
   ValidationError, AuthenticationError, ConflictError
 } from "./error-handler";
@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
-  app.post("/api/auth/register", 
+  app.post("/api/auth/register",
     validateInputs({
       username: validateUsername,
       email: validateEmail,
@@ -226,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Login route
-  app.post("/api/auth/login", 
+  app.post("/api/auth/login",
     validateInputs({
       username: (val) => typeof val === 'string' && val.length > 0,
       password: (val) => typeof val === 'string' && val.length > 0
@@ -333,31 +333,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/user/:id", async (req: Request, res: Response) => {
+  app.patch("/api/user/:id", requireAuth, async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.id);
-      const user = await storageInstance.getUser(userId);
+
+      // Validate the request body
+      const validatedData = z.object({
+        fullName: z.string().min(2).optional(),
+        email: z.string().email().optional(),
+        phoneNumber: z.string().optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        country: z.string().optional(),
+      }).parse(req.body);
+
+      // Ensure user can only update their own profile
+      if (req.session?.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const user = await storageInstance.updateUser(userId, validatedData);
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Don't allow update of certain fields
-      const { id, balance, createdAt, ...allowedUpdates } = req.body;
-
-      const updatedUser = await storageInstance.updateUser(userId, allowedUpdates);
-
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // Don't return password in response
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.status(200).json(userWithoutPassword);
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update user" });
+      console.error("Update user error:", error); // Added logging for clarity
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to update user" });
+      }
     }
   });
+
 
   // Asset routes
   app.get("/api/assets", async (req: Request, res: Response) => {
@@ -690,11 +703,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Investment plan not found" });
       }
 
-      // Check if user has sufficient balance
-      const investmentAmount = parseFloat(validatedData.amount.toString());
-      const userBalance = parseFloat(user.balance.toString());
+      // Validate user balance
+      const userBalance = parseFloat(user.balance || "0");
+      const investmentAmount = parseFloat(validatedData.amount);
 
-      if (userBalance < investmentAmount) {
+      if (investmentAmount > userBalance) {
         return res.status(400).json({ message: "Insufficient balance" });
       }
 
@@ -756,8 +769,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // In a real application, you would use a file upload middleware like multer
       const fileName = `payment_proof_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
       const fileUrl = `/uploads/payment_proofs/${fileName}`;
-      
-      res.status(200).json({ 
+
+      res.status(200).json({
         message: "Payment proof uploaded successfully",
         fileUrl: fileUrl,
         fileName: fileName
@@ -772,7 +785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/transactions", async (req: Request, res: Response) => {
     try {
       const validatedData = insertTransactionSchema.parse(req.body);
-      
+
       // Ensure all new transactions start as pending
       validatedData.status = "pending";
 
@@ -838,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all transactions or filter by status
       const status = req.query.status as string;
       const transactions = await storageInstance.getAllTransactions(status);
-      
+
       // Include user details for each transaction
       const transactionsWithUsers = await Promise.all(
         transactions.map(async (transaction) => {
@@ -865,10 +878,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/transactions/:id/review", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
       const transactionId = parseInt(req.params.id);
-      const { action, adminNotes } = reviewTransactionSchema.parse({ 
-        transactionId, 
-        action: req.body.action, 
-        adminNotes: req.body.adminNotes 
+      const { action, adminNotes } = reviewTransactionSchema.parse({
+        transactionId,
+        action: req.body.action,
+        adminNotes: req.body.adminNotes
       });
 
       const adminUserId = req.session?.userId;
