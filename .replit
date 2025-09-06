@@ -16,6 +16,7 @@ externalPort = 80
 exposeLocalhost = true
 
 [workflows]
+runButton = "Run Application"
 
 [[workflows.workflow]]
 name = "Project"
@@ -34,6 +35,15 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Run Application"
+author = 40250938
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
 
 [agent]
 integrations = ["javascript_websocket==1.0.0"]

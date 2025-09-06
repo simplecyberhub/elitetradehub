@@ -25,15 +25,18 @@ export function configureSession(app: Express) {
 
   app.use(session({
     secret: sessionSecret,
-    resave: true,
-    saveUninitialized: true,
+    resave: false,
+    saveUninitialized: false,
     cookie: {
       secure: false, // Set to false for development
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       sameSite: 'lax'
     },
-    store: new session.MemoryStore(),
+    store: new PgSession({
+      pool: pool,
+      tableName: 'session'
+    }),
     name: 'sessionId'
   }));
 }
