@@ -1,4 +1,3 @@
-
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq, desc, and } from "drizzle-orm";
@@ -14,6 +13,7 @@ import {
   type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem
 } from "@shared/schema";
 import { IStorage } from "./storage";
+import { hashPassword } from "@shared/utils";
 
 export class DbStorage implements IStorage {
   private db: ReturnType<typeof drizzle>;
@@ -23,7 +23,7 @@ export class DbStorage implements IStorage {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL must be set");
     }
-    
+
     this.client = postgres(process.env.DATABASE_URL);
     this.db = drizzle(this.client, {
       schema: {
@@ -58,9 +58,32 @@ export class DbStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: number, data: Partial<InsertUser>): Promise<User> {
-    const [user] = await this.db.update(users).set(data).where(eq(users.id, id)).returning();
-    return user;
+  async updateUser(id: number, updates: Partial<InsertUser & { balance?: string; suspended?: boolean }>): Promise<User | null> {
+    const updateData: any = { ...updates };
+
+    // Convert balance to numeric if provided
+    if (updateData.balance !== undefined) {
+      updateData.balance = updateData.balance.toString();
+    }
+
+    // Hash password if provided
+    if (updateData.password) {
+      updateData.password = await hashPassword(updateData.password);
+    }
+
+    // Handle suspended field (store as string for compatibility)
+    if (updateData.suspended !== undefined) {
+      updateData.kycStatus = updateData.suspended ? 'suspended' : 'verified';
+      delete updateData.suspended;
+    }
+
+    const [updatedUser] = await this.db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+
+    return updatedUser || null;
   }
 
   async getUsers(): Promise<User[]> {
@@ -221,7 +244,14 @@ export class DbStorage implements IStorage {
 
   // Investment plan operations
   async createInvestmentPlan(data: InsertInvestmentPlan): Promise<InvestmentPlan> {
-    const [plan] = await this.db.insert(investmentPlans).values(data).returning();
+    const processedData = {
+      ...data,
+      minAmount: data.minAmount.toString(),
+      maxAmount: data.maxAmount.toString(),
+      roiPercentage: data.roiPercentage.toString(),
+      lockPeriodDays: parseInt(data.lockPeriodDays.toString())
+    };
+    const [plan] = await this.db.insert(investmentPlans).values(processedData).returning();
     return plan;
   }
 
@@ -234,9 +264,30 @@ export class DbStorage implements IStorage {
     return plan;
   }
 
-  async updateInvestmentPlan(id: number, data: Partial<InsertInvestmentPlan>): Promise<InvestmentPlan> {
-    const [plan] = await this.db.update(investmentPlans).set(data).where(eq(investmentPlans.id, id)).returning();
-    return plan;
+  async updateInvestmentPlan(id: number, updates: Partial<InsertInvestmentPlan & { status?: string }>): Promise<InvestmentPlan | null> {
+    const updateData: any = { ...updates };
+
+    // Convert numeric strings to proper numbers
+    if (updateData.minAmount) {
+      updateData.minAmount = updateData.minAmount.toString();
+    }
+    if (updateData.maxAmount) {
+      updateData.maxAmount = updateData.maxAmount.toString();
+    }
+    if (updateData.roiPercentage) {
+      updateData.roiPercentage = updateData.roiPercentage.toString();
+    }
+    if (updateData.lockPeriodDays) {
+      updateData.lockPeriodDays = parseInt(updateData.lockPeriodDays.toString());
+    }
+
+    const [updatedPlan] = await this.db
+      .update(investmentPlans)
+      .set(updateData)
+      .where(eq(investmentPlans.id, id))
+      .returning();
+
+    return updatedPlan || null;
   }
 
   async getInvestmentPlan(id: number): Promise<InvestmentPlan | undefined> {

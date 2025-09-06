@@ -270,13 +270,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/investment-plans", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
+      // Parse duration string to days
+      let lockPeriodDays = req.body.lockPeriodDays || req.body.duration;
+      if (typeof lockPeriodDays === 'string') {
+        const durationMatch = lockPeriodDays.match(/(\d+)\s*(day|days|week|weeks|month|months|year|years)/i);
+        if (durationMatch) {
+          const value = parseInt(durationMatch[1]);
+          const unit = durationMatch[2].toLowerCase();
+          switch (unit) {
+            case 'day':
+            case 'days':
+              lockPeriodDays = value;
+              break;
+            case 'week':
+            case 'weeks':
+              lockPeriodDays = value * 7;
+              break;
+            case 'month':
+            case 'months':
+              lockPeriodDays = value * 30;
+              break;
+            case 'year':
+            case 'years':
+              lockPeriodDays = value * 365;
+              break;
+            default:
+              lockPeriodDays = parseInt(lockPeriodDays) || 1;
+          }
+        } else {
+          lockPeriodDays = parseInt(lockPeriodDays) || 1;
+        }
+      }
+
       const validatedData = {
         name: req.body.name,
         description: req.body.description,
         minAmount: req.body.minAmount,
         maxAmount: req.body.maxAmount || null,
         roiPercentage: req.body.roiPercentage || req.body.expectedReturn,
-        lockPeriodDays: req.body.lockPeriodDays || req.body.duration,
+        lockPeriodDays: lockPeriodDays,
         features: req.body.features || [],
         status: req.body.status || 'active'
       };
