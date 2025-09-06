@@ -45,7 +45,7 @@ const Transactions = () => {
       return transaction.type === "investment" || transaction.subType === "investment";
     }
     if (filter === "trade") {
-      return transaction.type === "trade" || transaction.subType === "buy" || transaction.subType === "sell";
+      return transaction.type === "trade" || transaction.subType === "trade";
     }
     return transaction.type.toLowerCase() === filter.toLowerCase();
   });
@@ -88,8 +88,7 @@ const Transactions = () => {
     const amount = parseFloat(transaction.amount);
     const isNegative = transaction.type === "withdrawal" || 
                       transaction.type === "investment" || 
-                      transaction.subType === "investment" ||
-                      (transaction.type === "trade" && transaction.subType === "buy");
+                      transaction.subType === "investment";
     
     return (
       <span className={isNegative ? "text-destructive" : "text-success"}>
@@ -253,8 +252,8 @@ const Transactions = () => {
                               <div className="flex-grow">
                                 <div className="flex justify-between">
                                   <h4 className="font-medium capitalize">
-                                    {transaction.type === "trade" || transaction.subType === "buy" || transaction.subType === "sell"
-                                      ? `${transaction.subType === "buy" ? "Buy" : "Sell"} ${transaction.assetSymbol || "Asset"}`
+                                    {transaction.type === "trade" || transaction.subType === "trade"
+                                      ? `Trade - ${transaction.assetSymbol || "Asset"}`
                                       : transaction.type === "investment" || transaction.subType === "investment"
                                       ? "Investment"
                                       : `${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}`}
@@ -266,10 +265,13 @@ const Transactions = () => {
                                     {transaction.description && (
                                       <span className="text-xs text-neutral-500">{transaction.description}</span>
                                     )}
-                                    {transaction.method && !transaction.description && (
+                                    {transaction.method && !transaction.description && (transaction.type !== "investment" && transaction.subType !== "investment") && (
                                       <span className="capitalize">{transaction.method.replace("_", " ")}</span>
                                     )}
-                                    {transaction.assetSymbol && (transaction.type === "trade" || transaction.subType === "buy" || transaction.subType === "sell") && (
+                                    {(transaction.type === "investment" || transaction.subType === "investment") && !transaction.description && (
+                                      <span className="text-xs text-neutral-500">Investment Plan</span>
+                                    )}
+                                    {transaction.assetSymbol && transaction.type === "trade" && (
                                       <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded ml-2">
                                         {transaction.assetSymbol}
                                       </span>
