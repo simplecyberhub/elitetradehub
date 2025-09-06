@@ -30,6 +30,7 @@ interface User {
   kycStatus: string;
   role: string;
   createdAt: string;
+  suspended?: boolean;
 }
 
 interface KycDocument {
@@ -105,6 +106,9 @@ export default function AdminDashboard() {
   const [newAsset, setNewAsset] = useState({ symbol: '', name: '', type: 'crypto', currentPrice: '' });
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [transactionAction, setTransactionAction] = useState({ action: '', notes: '' });
+  const [newInvestmentPlan, setNewInvestmentPlan] = useState<InvestmentPlan>({
+    id: 0, name: '', description: '', minAmount: '', maxAmount: '', expectedReturn: '', duration: '', isActive: true
+  });
 
   // Check if user is admin
   if (!user || user.role !== 'admin') {
@@ -126,7 +130,7 @@ export default function AdminDashboard() {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch admin stats
       const statsResponse = await apiRequest("GET", "/api/admin/stats", undefined, {
         'X-User-Id': user.id.toString(),
@@ -168,12 +172,18 @@ export default function AdminDashboard() {
       setTransactions(transactionsData);
 
       // Fetch assets
-      const assetsResponse = await apiRequest("GET", "/api/assets");
+      const assetsResponse = await apiRequest("GET", "/api/admin/assets", undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
       const assetsData = await assetsResponse.json();
       setAssets(assetsData);
 
       // Fetch investment plans
-      const plansResponse = await apiRequest("GET", "/api/investment-plans");
+      const plansResponse = await apiRequest("GET", "/api/admin/investment-plans", undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
       const plansData = await plansResponse.json();
       setInvestmentPlans(plansData);
 
@@ -195,9 +205,9 @@ export default function AdminDashboard() {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
       });
-      
+
       setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-      
+
       toast({
         title: "Success",
         description: "User role updated successfully"
@@ -220,13 +230,13 @@ export default function AdminDashboard() {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
       });
-      
+
       setKycDocuments(kycDocuments.map(doc => 
         doc.id === docId 
           ? { ...doc, verificationStatus: status, rejectionReason } 
           : doc
       ));
-      
+
       toast({
         title: "Success",
         description: `KYC document ${status}`
@@ -250,7 +260,7 @@ export default function AdminDashboard() {
       });
 
       await fetchAdminData();
-      
+
       toast({
         title: "Success",
         description: `User balance ${type === 'add' ? 'increased' : 'decreased'} by $${amount}`
@@ -275,7 +285,7 @@ export default function AdminDashboard() {
       });
 
       await fetchAdminData();
-      
+
       toast({
         title: "Success",
         description: `Transaction ${action}d successfully`
@@ -299,7 +309,7 @@ export default function AdminDashboard() {
       });
 
       setUsers(users.map(u => u.id === userId ? { ...u, suspended: suspend } : u));
-      
+
       toast({
         title: "Success",
         description: `User ${suspend ? 'suspended' : 'unsuspended'} successfully`
@@ -319,7 +329,7 @@ export default function AdminDashboard() {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
       });
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -343,6 +353,140 @@ export default function AdminDashboard() {
     }
   };
 
+  const addAsset = async () => {
+    try {
+      await apiRequest("POST", "/api/admin/assets", newAsset, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+
+      await fetchAdminData();
+      setNewAsset({ symbol: '', name: '', type: 'crypto', currentPrice: '' });
+
+      toast({
+        title: "Success",
+        description: "Asset added successfully"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add asset"
+      });
+    }
+  };
+
+  const updateAsset = async (assetId: number, updates: any) => {
+    try {
+      await apiRequest("PATCH", `/api/admin/assets/${assetId}`, updates, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+
+      await fetchAdminData();
+
+      toast({
+        title: "Success",
+        description: "Asset updated successfully"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update asset"
+      });
+    }
+  };
+
+  const deleteAsset = async (assetId: number) => {
+    try {
+      await apiRequest("DELETE", `/api/admin/assets/${assetId}`, undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+
+      await fetchAdminData();
+
+      toast({
+        title: "Success",
+        description: "Asset deleted successfully"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete asset"
+      });
+    }
+  };
+
+  const addInvestmentPlan = async () => {
+    try {
+      await apiRequest("POST", "/api/admin/investment-plans", newInvestmentPlan, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+
+      await fetchAdminData();
+      setNewInvestmentPlan({ id: 0, name: '', description: '', minAmount: '', maxAmount: '', expectedReturn: '', duration: '', isActive: true });
+
+      toast({
+        title: "Success",
+        description: "Investment plan added successfully"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add investment plan"
+      });
+    }
+  };
+
+  const updateInvestmentPlan = async (planId: number, updates: any) => {
+    try {
+      await apiRequest("PATCH", `/api/admin/investment-plans/${planId}`, updates, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+
+      await fetchAdminData();
+
+      toast({
+        title: "Success",
+        description: "Investment plan updated successfully"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update investment plan"
+      });
+    }
+  };
+
+  const deleteInvestmentPlan = async (planId: number) => {
+    try {
+      await apiRequest("DELETE", `/api/admin/investment-plans/${planId}`, undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+
+      await fetchAdminData();
+
+      toast({
+        title: "Success",
+        description: "Investment plan deleted successfully"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete investment plan"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-8">
@@ -354,7 +498,7 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-      
+
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -367,7 +511,7 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold">{stats.totalUsers}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Trades</CardTitle>
@@ -377,7 +521,7 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold">{stats.totalTrades}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Investments</CardTitle>
@@ -387,7 +531,7 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold">{stats.totalInvestments}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending KYC</CardTitle>
@@ -412,7 +556,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="transactions">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -561,8 +705,8 @@ export default function AdminDashboard() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={(user as any).suspended ? 'destructive' : 'default'}>
-                          {(user as any).suspended ? 'Suspended' : 'Active'}
+                        <Badge variant={user.suspended ? 'destructive' : 'default'}>
+                          {user.suspended ? 'Suspended' : 'Active'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -627,10 +771,10 @@ export default function AdminDashboard() {
                               </Button>
                               <Button
                                 size="sm"
-                                variant={(user as any).suspended ? 'default' : 'destructive'}
-                                onClick={() => suspendUser(user.id, !(user as any).suspended)}
+                                variant={user.suspended ? 'default' : 'destructive'}
+                                onClick={() => suspendUser(user.id, !user.suspended)}
                               >
-                                {(user as any).suspended ? 'Unsuspend' : 'Suspend'}
+                                {user.suspended ? 'Unsuspend' : 'Suspend'}
                               </Button>
                             </>
                           )}
@@ -643,7 +787,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="kyc">
           <Card>
             <CardHeader>
@@ -707,7 +851,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="trades">
           <Card>
             <CardHeader>
@@ -753,7 +897,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="assets">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -801,7 +945,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <DialogFooter>
-                    <Button onClick={() => {/* Add asset logic */}}>
+                    <Button onClick={addAsset}>
                       Add Asset
                     </Button>
                   </DialogFooter>
@@ -838,10 +982,18 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="space-x-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateAsset(asset.id, { isActive: !asset.isActive })}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="destructive">
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => deleteAsset(asset.id)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -858,10 +1010,70 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Investment Plans Management</CardTitle>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Plan
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Plan
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Investment Plan</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Input
+                      placeholder="Plan Name"
+                      value={newInvestmentPlan.name}
+                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                    <Input
+                      placeholder="Description"
+                      value={newInvestmentPlan.description}
+                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, description: e.target.value }))}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Minimum Amount"
+                      value={newInvestmentPlan.minAmount}
+                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, minAmount: e.target.value }))}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Maximum Amount"
+                      value={newInvestmentPlan.maxAmount}
+                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, maxAmount: e.target.value }))}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Expected Return (%)"
+                      value={newInvestmentPlan.expectedReturn}
+                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, expectedReturn: e.target.value }))}
+                    />
+                    <Input
+                      placeholder="Duration (e.g., 30 days)"
+                      value={newInvestmentPlan.duration}
+                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, duration: e.target.value }))}
+                    />
+                    <Select value={newInvestmentPlan.isActive ? 'active' : 'inactive'} onValueChange={(value) => 
+                      setNewInvestmentPlan(prev => ({ ...prev, isActive: value === 'active' }))
+                    }>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={addInvestmentPlan}>
+                      Add Plan
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <Table>
@@ -893,10 +1105,18 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="space-x-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateInvestmentPlan(plan.id, { isActive: !plan.isActive })}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="destructive">
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => deleteInvestmentPlan(plan.id)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
