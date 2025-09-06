@@ -14,6 +14,10 @@ import {
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
+// Infer the schema types for insert operations
+const insertAssetSchema = { _type: {} as InsertAsset };
+const insertInvestmentPlanSchema = { _type: {} as InsertInvestmentPlan };
+
 export class DbStorage implements IStorage {
   private db;
   private client;
@@ -93,6 +97,16 @@ export class DbStorage implements IStorage {
   async updateAsset(id: number, data: Partial<Asset>): Promise<Asset | undefined> {
     const result = await this.db.update(assets).set(data).where(eq(assets.id, id)).returning();
     return result[0];
+  }
+
+  async deleteAsset(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(assets).where(eq(assets.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Delete asset error:', error);
+      return false;
+    }
   }
 
   // Trader operations
@@ -277,6 +291,16 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async deleteInvestmentPlan(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(investmentPlans).where(eq(investmentPlans.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Delete investment plan error:', error);
+      return false;
+    }
+  }
+
   // Investment operations
   async getInvestment(id: number): Promise<Investment | undefined> {
     const result = await this.db.select().from(investments).where(eq(investments.id, id)).limit(1);
@@ -446,8 +470,13 @@ export class DbStorage implements IStorage {
   }
 
   async deleteWatchlistItem(id: number): Promise<boolean> {
-    const result = await this.db.delete(watchlistItems).where(eq(watchlistItems.id, id));
-    return result.length > 0;
+    try {
+      const result = await this.db.delete(watchlistItems).where(eq(watchlistItems.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Delete watchlist item error:', error);
+      return false;
+    }
   }
 
 

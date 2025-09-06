@@ -56,6 +56,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       const updates = req.body;
 
+      // Handle balance adjustment
+      if (updates.balanceAdjustment) {
+        const { amount, type } = updates.balanceAdjustment;
+        const user = await storageInstance.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        const currentBalance = parseFloat(user.balance || "0");
+        const adjustmentAmount = parseFloat(amount);
+        const newBalance = type === 'add'
+          ? currentBalance + adjustmentAmount
+          : Math.max(0, currentBalance - adjustmentAmount);
+
+        updates.balance = newBalance.toString();
+        delete updates.balanceAdjustment;
+      }
+
       const updatedUser = await storageInstance.updateUser(userId, updates);
 
       if (!updatedUser) {
@@ -65,6 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...userWithoutPassword } = updatedUser;
       res.status(200).json(userWithoutPassword);
     } catch (error) {
+      console.error("Update user error:", error);
       res.status(500).json({ message: "Failed to update user" });
     }
   });
@@ -206,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const csvHeaders = Object.keys(data[0]).filter(key => key !== 'password').join(',');
       const csvRows = data.map(item => {
         const { password, ...itemWithoutPassword } = item;
-        return Object.values(itemWithoutPassword).map(value => 
+        return Object.values(itemWithoutPassword).map(value =>
           typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value
         ).join(',');
       });
