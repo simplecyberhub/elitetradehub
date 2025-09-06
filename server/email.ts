@@ -1,54 +1,11 @@
 
-<old_str>import { MailService } from '@sendgrid/mail';
-
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
-}
-
-const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY);
-
-interface EmailParams {
-  to: string;
-  from: string;
-  subject: string;
-  text?: string;
-  html?: string;
-}
-
-export async function sendEmail(params: EmailParams): Promise<boolean> {
-  try {
-    // Check if SendGrid API key is properly configured
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your-sendgrid-api-key') {
-      console.warn('SendGrid API key not configured - email sending disabled');
-      return false;
-    }
-
-    const emailData: any = {
-      to: params.to,
-      from: params.from,
-      subject: params.subject,
-    };
-    
-    if (params.text) emailData.text = params.text;
-    if (params.html) emailData.html = params.html;
-    
-    await mailService.send(emailData);
-    console.log('Email sent successfully to:', params.to);
-    return true;
-  } catch (error) {
-    console.error('SendGrid email error:', error);
-    // For development, don't let email failures break the application
-    return false;
-  }
-}</old_str>
-<new_str>import { MailService } from '@sendgrid/mail';
+import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 
 // Initialize SendGrid if available
-let mailService: MailService | null = null;
+let mailService: typeof sgMail | null = null;
 if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your-sendgrid-api-key') {
-  mailService = new MailService();
+  mailService = sgMail;
   mailService.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
@@ -139,4 +96,25 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   // If both fail, try a simple fallback method
   console.warn('All email services failed for:', params.to);
   return false;
-}</old_str>
+}
+
+// Email templates
+export const emailTemplates = {
+  welcomeEmail: (username: string) => ({
+    subject: 'Welcome to EliteStock Trading Platform',
+    text: `Welcome ${username}! Your account has been created successfully.`,
+    html: `<h1>Welcome ${username}!</h1><p>Your account has been created successfully.</p>`
+  }),
+  
+  depositConfirmation: (amount: string, currency: string) => ({
+    subject: 'Deposit Confirmation',
+    text: `Your deposit of ${amount} ${currency} has been confirmed.`,
+    html: `<h1>Deposit Confirmed</h1><p>Your deposit of <strong>${amount} ${currency}</strong> has been confirmed.</p>`
+  }),
+  
+  withdrawalRequest: (amount: string, currency: string) => ({
+    subject: 'Withdrawal Request Received',
+    text: `Your withdrawal request for ${amount} ${currency} has been received and is being processed.`,
+    html: `<h1>Withdrawal Request</h1><p>Your withdrawal request for <strong>${amount} ${currency}</strong> has been received and is being processed.</p>`
+  })
+};
