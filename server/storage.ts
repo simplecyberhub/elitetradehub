@@ -510,6 +510,17 @@ export class MemStorage implements IStorage {
       );
     }
 
+    // Create transaction record for the investment
+    await this.createTransaction({
+      userId: investment.userId,
+      type: "investment",
+      amount: investment.amount,
+      status: "completed",
+      method: "platform",
+      description: `Investment in plan ${investment.planId}`,
+      subType: "investment"
+    });
+
     return newInvestment;
   }
 
