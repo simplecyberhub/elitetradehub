@@ -103,12 +103,22 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [balanceUpdate, setBalanceUpdate] = useState({ userId: 0, amount: '', type: 'add' });
-  const [newAsset, setNewAsset] = useState({ symbol: '', name: '', type: 'crypto', price: '' });
+  const [newAsset, setNewAsset] = useState<Asset>({ id: 0, symbol: '', name: '', type: 'crypto', currentPrice: '', isActive: true });
+  const [editAssetData, setEditAssetData] = useState<Asset>({ id: 0, symbol: '', name: '', type: 'crypto', currentPrice: '', isActive: true });
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [transactionAction, setTransactionAction] = useState({ action: '', notes: '' });
   const [newInvestmentPlan, setNewInvestmentPlan] = useState<InvestmentPlan>({
     id: 0, name: '', description: '', minAmount: '', maxAmount: '', expectedReturn: '', duration: '', isActive: true
   });
+  const [editingPlan, setEditingPlan] = useState<InvestmentPlan | null>(null);
+  const [editPlanData, setEditPlanData] = useState<InvestmentPlan>({
+    id: 0, name: '', description: '', minAmount: '', maxAmount: '', expectedReturn: '', duration: '', isActive: true,
+    roiPercentage: '', lockPeriodDays: ''
+  });
+  const [showNewAssetDialog, setShowNewAssetDialog] = useState(false);
+  const [showNewInvestmentPlanDialog, setShowNewInvestmentPlanDialog] = useState(false);
+
 
   // Check if user is admin
   if (!user || user.role !== 'admin') {
@@ -138,7 +148,7 @@ export default function AdminDashboard() {
             'X-User-Id': user.id.toString(),
             'X-User-Role': user.role
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             setter(data);
@@ -337,7 +347,8 @@ export default function AdminDashboard() {
       });
 
       await fetchAdminData();
-      setNewAsset({ symbol: '', name: '', type: 'crypto', price: '' });
+      setNewAsset({ id: 0, symbol: '', name: '', type: 'crypto', currentPrice: '', isActive: true });
+      setShowNewAssetDialog(false);
 
       toast({
         title: "Success",
@@ -352,14 +363,15 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateAsset = async (assetId: number, updates: any) => {
+  const updateAsset = async () => {
     try {
-      await apiRequest("PATCH", `/api/admin/assets/${assetId}`, updates, {
+      await apiRequest("PATCH", `/api/admin/assets/${editAssetData.id}`, editAssetData, {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
       });
 
       await fetchAdminData();
+      setEditingAsset(null);
 
       toast({
         title: "Success",
@@ -396,6 +408,11 @@ export default function AdminDashboard() {
     }
   };
 
+  const startEditAsset = (asset: Asset) => {
+    setEditAssetData(asset);
+    setEditingAsset(asset);
+  };
+
   const addInvestmentPlan = async () => {
     try {
       await apiRequest("POST", "/api/admin/investment-plans", newInvestmentPlan, {
@@ -405,6 +422,7 @@ export default function AdminDashboard() {
 
       await fetchAdminData();
       setNewInvestmentPlan({ id: 0, name: '', description: '', minAmount: '', maxAmount: '', expectedReturn: '', duration: '', isActive: true });
+      setShowNewInvestmentPlanDialog(false);
 
       toast({
         title: "Success",
@@ -419,14 +437,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateInvestmentPlan = async (planId: number, updates: any) => {
+  const updateInvestmentPlan = async () => {
     try {
-      await apiRequest("PATCH", `/api/admin/investment-plans/${planId}`, updates, {
+      await apiRequest("PATCH", `/api/admin/investment-plans/${editPlanData.id}`, {
+        name: editPlanData.name,
+        description: editPlanData.description,
+        minAmount: editPlanData.minAmount,
+        maxAmount: editPlanData.maxAmount,
+        expectedReturn: editPlanData.expectedReturn,
+        duration: editPlanData.duration,
+        isActive: editPlanData.isActive,
+      }, {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
       });
 
       await fetchAdminData();
+      setEditingPlan(null);
 
       toast({
         title: "Success",
@@ -461,6 +488,16 @@ export default function AdminDashboard() {
         description: "Failed to delete investment plan"
       });
     }
+  };
+
+  const startEditPlan = (plan: InvestmentPlan) => {
+    setEditPlanData({
+      ...plan,
+      roiPercentage: plan.expectedReturn, // Map expectedReturn to roiPercentage
+      lockPeriodDays: plan.duration,     // Map duration to lockPeriodDays
+      status: plan.isActive ? 'active' : 'inactive', // Map isActive to status
+    });
+    setEditingPlan(plan);
   };
 
   if (loading) {
@@ -878,55 +915,10 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Asset Management</CardTitle>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Asset
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Asset</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Input
-                      placeholder="Symbol (e.g., BTC/USD)"
-                      value={newAsset.symbol}
-                      onChange={(e) => setNewAsset(prev => ({ ...prev, symbol: e.target.value }))}
-                    />
-                    <Input
-                      placeholder="Name (e.g., Bitcoin)"
-                      value={newAsset.name}
-                      onChange={(e) => setNewAsset(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                    <Select value={newAsset.type} onValueChange={(value) => 
-                      setNewAsset(prev => ({ ...prev, type: value }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="crypto">Cryptocurrency</SelectItem>
-                        <SelectItem value="forex">Forex</SelectItem>
-                        <SelectItem value="stocks">Stocks</SelectItem>
-                        <SelectItem value="commodities">Commodities</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      placeholder="Current Price"
-                      value={newAsset.price}
-                      onChange={(e) => setNewAsset(prev => ({ ...prev, price: e.target.value }))}
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={addAsset}>
-                      Add Asset
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button onClick={() => setShowNewAssetDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Asset
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -950,7 +942,7 @@ export default function AdminDashboard() {
                       <TableCell>
                         <Badge>{asset.type}</Badge>
                       </TableCell>
-                      <TableCell>${asset.price}</TableCell>
+                      <TableCell>${asset.currentPrice}</TableCell>
                       <TableCell>
                         <Badge variant={asset.isActive ? 'default' : 'secondary'}>
                           {asset.isActive ? 'Active' : 'Inactive'}
@@ -959,9 +951,9 @@ export default function AdminDashboard() {
                       <TableCell>
                         <div className="space-x-2">
                           <Button 
+                            variant="outline" 
                             size="sm" 
-                            variant="outline"
-                            onClick={() => updateAsset(asset.id, { isActive: !asset.isActive })}
+                            onClick={() => startEditAsset(asset)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -980,76 +972,140 @@ export default function AdminDashboard() {
               </Table>
             </CardContent>
           </Card>
+
+          {/* Add Asset Dialog */}
+          <Dialog open={showNewAssetDialog} onOpenChange={setShowNewAssetDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Asset</DialogTitle>
+                <DialogDescription>
+                  Create a new trading asset for the platform.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="symbol">Symbol</Label>
+                  <Input
+                    id="symbol"
+                    value={newAsset.symbol}
+                    onChange={(e) => setNewAsset(prev => ({ ...prev, symbol: e.target.value }))}
+                    placeholder="e.g., BTC/USD"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={newAsset.name}
+                    onChange={(e) => setNewAsset(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g., Bitcoin"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="type">Type</Label>
+                  <Select value={newAsset.type} onValueChange={(value) => setNewAsset(prev => ({ ...prev, type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="crypto">Cryptocurrency</SelectItem>
+                      <SelectItem value="stock">Stock</SelectItem>
+                      <SelectItem value="forex">Forex</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="currentPrice">Current Price</Label>
+                  <Input
+                    id="currentPrice"
+                    type="number"
+                    step="0.000001"
+                    value={newAsset.currentPrice}
+                    onChange={(e) => setNewAsset(prev => ({ ...prev, currentPrice: e.target.value }))}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowNewAssetDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={addAsset}>Add Asset</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Asset Dialog */}
+          <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Asset</DialogTitle>
+                <DialogDescription>
+                  Update the asset information.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-symbol">Symbol</Label>
+                  <Input
+                    id="edit-symbol"
+                    value={editAssetData.symbol}
+                    onChange={(e) => setEditAssetData(prev => ({ ...prev, symbol: e.target.value }))}
+                    placeholder="e.g., BTC/USD"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editAssetData.name}
+                    onChange={(e) => setEditAssetData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g., Bitcoin"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-type">Type</Label>
+                  <Select value={editAssetData.type} onValueChange={(value) => setEditAssetData(prev => ({ ...prev, type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="crypto">Cryptocurrency</SelectItem>
+                      <SelectItem value="stock">Stock</SelectItem>
+                      <SelectItem value="forex">Forex</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-price">Current Price</Label>
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    step="0.000001"
+                    value={editAssetData.currentPrice}
+                    onChange={(e) => setEditAssetData(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditingAsset(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={updateAsset}>Update Asset</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="plans">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Investment Plans Management</CardTitle>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Plan
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Investment Plan</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Input
-                      placeholder="Plan Name"
-                      value={newInvestmentPlan.name}
-                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                    <Input
-                      placeholder="Description"
-                      value={newInvestmentPlan.description}
-                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, description: e.target.value }))}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Minimum Amount"
-                      value={newInvestmentPlan.minAmount}
-                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, minAmount: e.target.value }))}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Maximum Amount"
-                      value={newInvestmentPlan.maxAmount}
-                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, maxAmount: e.target.value }))}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Expected Return (%)"
-                      value={newInvestmentPlan.expectedReturn}
-                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, expectedReturn: e.target.value }))}
-                    />
-                    <Input
-                      placeholder="Duration (e.g., 30 days)"
-                      value={newInvestmentPlan.duration}
-                      onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, duration: e.target.value }))}
-                    />
-                    <Select value={newInvestmentPlan.isActive ? 'active' : 'inactive'} onValueChange={(value) => 
-                      setNewInvestmentPlan(prev => ({ ...prev, isActive: value === 'active' }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={addInvestmentPlan}>
-                      Add Plan
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button onClick={() => setShowNewInvestmentPlanDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Plan
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -1082,9 +1138,9 @@ export default function AdminDashboard() {
                       <TableCell>
                         <div className="space-x-2">
                           <Button 
+                            variant="outline" 
                             size="sm" 
-                            variant="outline"
-                            onClick={() => updateInvestmentPlan(plan.id, { isActive: !plan.isActive })}
+                            onClick={() => startEditPlan(plan)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -1103,6 +1159,122 @@ export default function AdminDashboard() {
               </Table>
             </CardContent>
           </Card>
+
+          {/* Add Investment Plan Dialog */}
+          <Dialog open={showNewInvestmentPlanDialog} onOpenChange={setShowNewInvestmentPlanDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Investment Plan</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Plan Name"
+                  value={newInvestmentPlan.name}
+                  onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, name: e.target.value }))}
+                />
+                <Input
+                  placeholder="Description"
+                  value={newInvestmentPlan.description}
+                  onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, description: e.target.value }))}
+                />
+                <Input
+                  placeholder="Min Amount"
+                  type="number"
+                  value={newInvestmentPlan.minAmount}
+                  onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, minAmount: e.target.value }))}
+                />
+                <Input
+                  placeholder="Max Amount"
+                  type="number"
+                  value={newInvestmentPlan.maxAmount}
+                  onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, maxAmount: e.target.value }))}
+                />
+                <Input
+                  placeholder="Expected Return (%)"
+                  type="number"
+                  value={newInvestmentPlan.expectedReturn}
+                  onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, expectedReturn: e.target.value }))}
+                />
+                <Input
+                  placeholder="Duration (e.g., 30 days, 1 month)"
+                  value={newInvestmentPlan.duration}
+                  onChange={(e) => setNewInvestmentPlan(prev => ({ ...prev, duration: e.target.value }))}
+                />
+                <Select value={newInvestmentPlan.isActive ? 'active' : 'inactive'} onValueChange={(value) => setNewInvestmentPlan(prev => ({ ...prev, isActive: value === 'active' }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button onClick={addInvestmentPlan}>Add Plan</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Investment Plan Dialog */}
+          <Dialog open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Investment Plan</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Plan Name"
+                  value={editPlanData.name}
+                  onChange={(e) => setEditPlanData(prev => ({ ...prev, name: e.target.value }))}
+                />
+                <Input
+                  placeholder="Description"
+                  value={editPlanData.description}
+                  onChange={(e) => setEditPlanData(prev => ({ ...prev, description: e.target.value }))}
+                />
+                <Input
+                  placeholder="Min Amount"
+                  type="number"
+                  value={editPlanData.minAmount}
+                  onChange={(e) => setEditPlanData(prev => ({ ...prev, minAmount: e.target.value }))}
+                />
+                <Input
+                  placeholder="Max Amount"
+                  type="number"
+                  value={editPlanData.maxAmount}
+                  onChange={(e) => setEditPlanData(prev => ({ ...prev, maxAmount: e.target.value }))}
+                />
+                <Input
+                  placeholder="Expected Return (%)"
+                  type="number"
+                  value={editPlanData.roiPercentage}
+                  onChange={(e) => setEditPlanData(prev => ({ ...prev, roiPercentage: e.target.value }))}
+                />
+                <Input
+                  placeholder="Duration (days)"
+                  type="number"
+                  value={editPlanData.lockPeriodDays}
+                  onChange={(e) => setEditPlanData(prev => ({ ...prev, lockPeriodDays: e.target.value }))}
+                />
+                <Select value={editPlanData.status} onValueChange={(value) => setEditPlanData(prev => ({ ...prev, status: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditingPlan(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={updateInvestmentPlan}>Update Plan</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="analytics">
