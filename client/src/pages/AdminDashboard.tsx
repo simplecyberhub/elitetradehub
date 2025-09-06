@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   });
   const [showNewAssetDialog, setShowNewAssetDialog] = useState(false);
   const [showNewInvestmentPlanDialog, setShowNewInvestmentPlanDialog] = useState(false);
-  
+
   // Settings state
   const [systemSettings, setSystemSettings] = useState({
     trading: {
@@ -519,7 +519,7 @@ export default function AdminDashboard() {
   const saveSettings = async () => {
     try {
       setSettingsLoading(true);
-      
+
       const response = await apiRequest("POST", "/api/admin/settings", systemSettings, {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
@@ -557,7 +557,7 @@ export default function AdminDashboard() {
         from_email: 'noreply@elitestock.com'
       }
     });
-    
+
     toast({
       title: "Settings Reset",
       description: "Settings have been reset to default values"
@@ -1396,36 +1396,42 @@ export default function AdminDashboard() {
                         <Label>Minimum Trade Amount</Label>
                         <Input 
                           type="number" 
-                          value={systemSettings.trading.trading_min_amount}
-                          onChange={(e) => setSystemSettings(prev => ({
+                          value={systemSettings?.trading?.trading_min_amount || '10.0'}
+                          onChange={(e) => setSystemSettings((prev) => ({
                             ...prev,
-                            trading: { ...prev.trading, trading_min_amount: e.target.value }
+                            trading: {
+                              ...prev?.trading,
+                              trading_min_amount: e.target.value
+                            }
                           }))}
-                          placeholder="10.00" 
                         />
                       </div>
                       <div>
                         <Label>Maximum Trade Amount</Label>
                         <Input 
                           type="number" 
-                          value={systemSettings.trading.trading_max_amount}
-                          onChange={(e) => setSystemSettings(prev => ({
+                          value={systemSettings?.trading?.trading_max_amount || '100000.0'}
+                          onChange={(e) => setSystemSettings((prev) => ({
                             ...prev,
-                            trading: { ...prev.trading, trading_max_amount: e.target.value }
+                            trading: {
+                              ...prev?.trading,
+                              trading_max_amount: e.target.value
+                            }
                           }))}
-                          placeholder="10000.00" 
                         />
                       </div>
                       <div>
                         <Label>Trading Fee (%)</Label>
                         <Input 
                           type="number" 
-                          value={systemSettings.trading.trading_fee_percentage}
-                          onChange={(e) => setSystemSettings(prev => ({
+                          value={systemSettings?.trading?.trading_fee_percentage || '1'}
+                          onChange={(e) => setSystemSettings((prev) => ({
                             ...prev,
-                            trading: { ...prev.trading, trading_fee_percentage: e.target.value }
+                            trading: {
+                              ...prev?.trading,
+                              trading_fee_percentage: e.target.value
+                            }
                           }))}
-                          placeholder="0.1" 
                         />
                       </div>
                     </CardContent>
@@ -1437,36 +1443,45 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <Label>SMTP Host</Label>
-                        <Input 
-                          value={systemSettings.email.smtp_host}
-                          onChange={(e) => setSystemSettings(prev => ({
+                        <Label htmlFor="smtp-host">SMTP Host</Label>
+                        <Input
+                          type="text"
+                          value={systemSettings?.email?.smtp_host || 'smtp.gmail.com'}
+                          onChange={(e) => setSystemSettings((prev) => ({
                             ...prev,
-                            email: { ...prev.email, smtp_host: e.target.value }
+                            email: {
+                              ...prev?.email,
+                              smtp_host: e.target.value
+                            }
                           }))}
-                          placeholder="smtp.gmail.com" 
                         />
                       </div>
-                      <div>
-                        <Label>SMTP Port</Label>
-                        <Input 
-                          value={systemSettings.email.smtp_port}
-                          onChange={(e) => setSystemSettings(prev => ({
+                      <div className="space-y-2">
+                        <Label htmlFor="smtp-port">SMTP Port</Label>
+                        <Input
+                          type="number"
+                          value={systemSettings?.email?.smtp_port || '587'}
+                          onChange={(e) => setSystemSettings((prev) => ({
                             ...prev,
-                            email: { ...prev.email, smtp_port: e.target.value }
+                            email: {
+                              ...prev?.email,
+                              smtp_port: e.target.value
+                            }
                           }))}
-                          placeholder="587" 
                         />
                       </div>
-                      <div>
-                        <Label>From Email</Label>
-                        <Input 
-                          value={systemSettings.email.from_email}
-                          onChange={(e) => setSystemSettings(prev => ({
+                      <div className="space-y-2">
+                        <Label htmlFor="from-email">From Email</Label>
+                        <Input
+                          type="email"
+                          value={systemSettings?.email?.from_email || 'noreply@elitestock.com'}
+                          onChange={(e) => setSystemSettings((prev) => ({
                             ...prev,
-                            email: { ...prev.email, from_email: e.target.value }
+                            email: {
+                              ...prev?.email,
+                              from_email: e.target.value
+                            }
                           }))}
-                          placeholder="noreply@elitestock.com" 
                         />
                       </div>
                     </CardContent>
