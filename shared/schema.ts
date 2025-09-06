@@ -237,9 +237,28 @@ export type InsertKycDocument = z.infer<typeof insertKycDocumentSchema>;
 export type WatchlistItem = typeof watchlistItems.$inferSelect;
 export type InsertWatchlistItem = z.infer<typeof insertWatchlistItemSchema>;
 
+// Platform settings table
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // trading, email, system
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSettingSchema = createInsertSchema(settings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Sessions table for express-session with connect-pg-simple
 export const sessions = pgTable("session", {
   sid: varchar("sid").primaryKey(),
   sess: jsonb("sess").notNull(),
   expire: timestamp("expire", { mode: 'date' }).notNull(),
 });
+
+// Export types for settings
+export type Setting = typeof settings.$inferSelect;
+export type InsertSetting = z.infer<typeof insertSettingSchema>;

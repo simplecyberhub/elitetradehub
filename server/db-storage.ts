@@ -5,15 +5,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 import {
   users, assets, traders, copyRelationships, trades,
-  investmentPlans, investments, transactions, kycDocuments, watchlistItems,
+  investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings,
   type User, type InsertUser, type Asset, type InsertAsset,
   type Trader, type InsertTrader, type CopyRelationship, type InsertCopyRelationship,
   type Trade, type InsertTrade, type InvestmentPlan, type InsertInvestmentPlan,
   type Investment, type InsertInvestment, type Transaction, type InsertTransaction,
-  type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem
+  type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem,
+  type Setting, type InsertSetting
 } from "@shared/schema";
 import { IStorage } from "./storage";
-import { hashPassword } from "@shared/utils";
 
 export class DbStorage implements IStorage {
   private db: ReturnType<typeof drizzle>;
@@ -28,7 +28,7 @@ export class DbStorage implements IStorage {
     this.db = drizzle(this.client, {
       schema: {
         users, assets, traders, copyRelationships, trades,
-        investmentPlans, investments, transactions, kycDocuments, watchlistItems
+        investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings
       }
     });
   }
@@ -66,8 +66,9 @@ export class DbStorage implements IStorage {
       updateData.balance = updateData.balance.toString();
     }
 
-    // Hash password if provided
+    // Hash password if provided (import hashPassword from auth.ts if needed)
     if (updateData.password) {
+      const { hashPassword } = await import('./auth');
       updateData.password = await hashPassword(updateData.password);
     }
 
@@ -492,6 +493,34 @@ export class DbStorage implements IStorage {
 
     const result = await this.db.delete(copyRelationships).where(eq(copyRelationships.id, id));
     return result.length > 0;
+  }
+
+  // Settings operations
+  async getAllSettings(): Promise<Setting[]> {
+    return await this.db.select().from(settings);
+  }
+
+  async getSettingsByCategory(category: string): Promise<Setting[]> {
+    return await this.db.select().from(settings).where(eq(settings.category, category));
+  }
+
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const result = await this.db.select().from(settings).where(eq(settings.key, key)).limit(1);
+    return result[0];
+  }
+
+  async updateSetting(key: string, value: string): Promise<Setting | null> {
+    const result = await this.db
+      .update(settings)
+      .set({ value, updatedAt: new Date() })
+      .where(eq(settings.key, key))
+      .returning();
+    return result[0] || null;
+  }
+
+  async createSetting(data: InsertSetting): Promise<Setting> {
+    const [setting] = await this.db.insert(settings).values(data).returning();
+    return setting;
   }
 
   // Admin stats
