@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS "assets" (
 	"volume_24h" numeric(20, 2),
 	"market_cap" numeric(20, 2),
 	"logo_url" text,
+	"is_active" boolean DEFAULT true NOT NULL,
 	CONSTRAINT "assets_symbol_unique" UNIQUE("symbol")
 );
 

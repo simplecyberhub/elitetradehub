@@ -210,8 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         symbol: req.body.symbol,
         name: req.body.name,
         type: req.body.type,
-        currentPrice: req.body.currentPrice,
-        isActive: true
+        price: req.body.currentPrice || req.body.price
       });
       const newAsset = await storageInstance.createAsset(validatedData);
       res.status(201).json(newAsset);

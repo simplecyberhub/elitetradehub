@@ -103,7 +103,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [balanceUpdate, setBalanceUpdate] = useState({ userId: 0, amount: '', type: 'add' });
-  const [newAsset, setNewAsset] = useState({ symbol: '', name: '', type: 'crypto', currentPrice: '' });
+  const [newAsset, setNewAsset] = useState({ symbol: '', name: '', type: 'crypto', price: '' });
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [transactionAction, setTransactionAction] = useState({ action: '', notes: '' });
   const [newInvestmentPlan, setNewInvestmentPlan] = useState<InvestmentPlan>({
@@ -337,7 +337,7 @@ export default function AdminDashboard() {
       });
 
       await fetchAdminData();
-      setNewAsset({ symbol: '', name: '', type: 'crypto', currentPrice: '' });
+      setNewAsset({ symbol: '', name: '', type: 'crypto', price: '' });
 
       toast({
         title: "Success",
@@ -916,8 +916,8 @@ export default function AdminDashboard() {
                     <Input
                       type="number"
                       placeholder="Current Price"
-                      value={newAsset.currentPrice}
-                      onChange={(e) => setNewAsset(prev => ({ ...prev, currentPrice: e.target.value }))}
+                      value={newAsset.price}
+                      onChange={(e) => setNewAsset(prev => ({ ...prev, price: e.target.value }))}
                     />
                   </div>
                   <DialogFooter>
@@ -950,7 +950,7 @@ export default function AdminDashboard() {
                       <TableCell>
                         <Badge>{asset.type}</Badge>
                       </TableCell>
-                      <TableCell>${asset.currentPrice}</TableCell>
+                      <TableCell>${asset.price}</TableCell>
                       <TableCell>
                         <Badge variant={asset.isActive ? 'default' : 'secondary'}>
                           {asset.isActive ? 'Active' : 'Inactive'}

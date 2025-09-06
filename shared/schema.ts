@@ -35,6 +35,7 @@ export const assets = pgTable("assets", {
   volume24h: numeric("volume_24h", { precision: 20, scale: 2 }),
   marketCap: numeric("market_cap", { precision: 20, scale: 2 }),
   logoUrl: text("logo_url"),
+  isActive: boolean("is_active").default(true).notNull(),
 });
 
 export const insertAssetSchema = createInsertSchema(assets).omit({
