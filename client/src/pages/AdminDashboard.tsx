@@ -460,9 +460,9 @@ export default function AdminDashboard() {
         description: editPlanData.description,
         minAmount: editPlanData.minAmount,
         maxAmount: editPlanData.maxAmount,
-        expectedReturn: editPlanData.expectedReturn,
-        duration: editPlanData.duration,
-        isActive: editPlanData.isActive,
+        roiPercentage: editPlanData.roiPercentage,
+        lockPeriodDays: editPlanData.lockPeriodDays,
+        status: editPlanData.status,
       }, {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
@@ -509,9 +509,9 @@ export default function AdminDashboard() {
   const startEditPlan = (plan: InvestmentPlan) => {
     setEditPlanData({
       ...plan,
-      roiPercentage: plan.expectedReturn, // Map expectedReturn to roiPercentage
-      lockPeriodDays: plan.duration,     // Map duration to lockPeriodDays
-      status: plan.isActive ? 'active' : 'inactive', // Map isActive to status
+      roiPercentage: plan.roiPercentage || plan.expectedReturn, // Use roiPercentage if available, otherwise expectedReturn
+      lockPeriodDays: plan.lockPeriodDays || plan.duration,     // Use lockPeriodDays if available, otherwise duration
+      status: plan.status || (plan.isActive ? 'active' : 'inactive'), // Use status if available, otherwise derive from isActive
     });
     setEditingPlan(plan);
   };
@@ -1006,7 +1006,7 @@ export default function AdminDashboard() {
                       <TableCell>
                         <Badge>{asset.type}</Badge>
                       </TableCell>
-                      <TableCell>${asset.currentPrice}</TableCell>
+                      <TableCell>${asset.price || asset.currentPrice}</TableCell>
                       <TableCell>
                         <Badge variant={asset.isActive ? 'default' : 'secondary'}>
                           {asset.isActive ? 'Active' : 'Inactive'}
@@ -1146,8 +1146,8 @@ export default function AdminDashboard() {
                     id="edit-price"
                     type="number"
                     step="0.000001"
-                    value={editAssetData.currentPrice}
-                    onChange={(e) => setEditAssetData(prev => ({ ...prev, price: e.target.value }))}
+                    value={editAssetData.currentPrice || editAssetData.price}
+                    onChange={(e) => setEditAssetData(prev => ({ ...prev, currentPrice: e.target.value, price: e.target.value }))}
                     placeholder="0.00"
                   />
                 </div>
@@ -1191,12 +1191,12 @@ export default function AdminDashboard() {
                       <TableCell>{plan.id}</TableCell>
                       <TableCell>{plan.name}</TableCell>
                       <TableCell>${plan.minAmount}</TableCell>
-                      <TableCell>${plan.maxAmount}</TableCell>
-                      <TableCell>{plan.expectedReturn}%</TableCell>
-                      <TableCell>{plan.duration}</TableCell>
+                      <TableCell>{plan.maxAmount ? `$${plan.maxAmount}` : 'No limit'}</TableCell>
+                      <TableCell>{plan.roiPercentage || plan.expectedReturn}%</TableCell>
+                      <TableCell>{plan.lockPeriodDays ? `${plan.lockPeriodDays} days` : plan.duration}</TableCell>
                       <TableCell>
-                        <Badge variant={plan.isActive ? 'default' : 'secondary'}>
-                          {plan.isActive ? 'Active' : 'Inactive'}
+                        <Badge variant={(plan.status === 'active' || plan.isActive) ? 'default' : 'secondary'}>
+                          {(plan.status === 'active' || plan.isActive) ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell>

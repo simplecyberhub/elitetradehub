@@ -228,6 +228,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const assetId = parseInt(req.params.id);
       const updates = req.body;
+      
+      // Map currentPrice to price if it exists
+      if (updates.currentPrice && !updates.price) {
+        updates.price = updates.currentPrice;
+      }
+      
       const updatedAsset = await storageInstance.updateAsset(assetId, updates);
       
       if (!updatedAsset) {
