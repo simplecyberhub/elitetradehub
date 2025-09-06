@@ -177,6 +177,16 @@ export class DbStorage implements IStorage {
 
   async createTrade(trade: InsertTrade): Promise<Trade> {
     const result = await this.db.insert(trades).values(trade).returning();
+    // Create transaction record for the trade
+    await this.createTransaction({
+      userId: trade.userId,
+      type: "trade",
+      amount: trade.amount,
+      status: trade.status === "executed" ? "completed" : "pending",
+      method: "platform",
+      description: `${trade.type === "buy" ? "Buy" : "Sell"} ${trade.amount} of asset ${trade.assetId}`,
+      subType: "trade"
+    });
     return result[0];
   }
 
@@ -278,19 +288,23 @@ export class DbStorage implements IStorage {
   }
 
   async createInvestment(investment: InsertInvestment): Promise<Investment> {
-    const result = await this.db.insert(investments).values(investment).returning();
+    const newInvestment = await this.db.insert(investments).values(investment).returning();
 
     // Deduct amount from user balance
-    const user = await this.getUser(investment.userId);
-    if (user) {
-      await this.updateUserBalance(
-        user.id,
-        parseFloat(investment.amount.toString()),
-        false
-      );
-    }
+    await this.updateUserBalance(investment.userId, parseFloat(investment.amount.toString()), false);
 
-    return result[0];
+    // Create transaction record for the investment
+    await this.createTransaction({
+      userId: investment.userId,
+      type: "investment",
+      amount: investment.amount,
+      status: "completed",
+      method: "platform",
+      description: `Investment in plan ${investment.planId}`,
+      subType: "investment"
+    });
+
+    return newInvestment[0];
   }
 
   async updateInvestment(id: number, data: Partial<Investment>): Promise<Investment | undefined> {
@@ -320,11 +334,11 @@ export class DbStorage implements IStorage {
 
   async getAllTransactions(status?: string): Promise<Transaction[]> {
     let query = this.db.select().from(transactions);
-    
+
     if (status) {
       query = query.where(eq(transactions.status, status));
     }
-    
+
     return await query.orderBy(desc(transactions.createdAt));
   }
 
@@ -340,7 +354,7 @@ export class DbStorage implements IStorage {
       })
       .where(eq(transactions.id, id))
       .returning();
-    
+
     return result[0] || null;
   }
 

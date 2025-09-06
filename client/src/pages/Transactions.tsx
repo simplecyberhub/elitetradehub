@@ -41,6 +41,12 @@ const Transactions = () => {
   // Filter transactions by type
   const filteredTransactions = transactions.filter((transaction: any) => {
     if (filter === "all") return true;
+    if (filter === "investment") {
+      return transaction.type === "investment" || transaction.subType === "investment";
+    }
+    if (filter === "trade") {
+      return transaction.type === "trade" || transaction.subType === "buy" || transaction.subType === "sell";
+    }
     return transaction.type.toLowerCase() === filter.toLowerCase();
   });
   
@@ -53,7 +59,10 @@ const Transactions = () => {
       transaction.type.toLowerCase().includes(searchValue) ||
       transaction.amount.toString().includes(searchValue) ||
       transaction.status.toLowerCase().includes(searchValue) ||
-      (transaction.method && transaction.method.toLowerCase().includes(searchValue))
+      (transaction.method && transaction.method.toLowerCase().includes(searchValue)) ||
+      (transaction.description && transaction.description.toLowerCase().includes(searchValue)) ||
+      (transaction.subType && transaction.subType.toLowerCase().includes(searchValue)) ||
+      (transaction.assetSymbol && transaction.assetSymbol.toLowerCase().includes(searchValue))
     );
   });
   
@@ -77,7 +86,10 @@ const Transactions = () => {
   // Helper to format transaction amount
   const formatAmount = (transaction: any) => {
     const amount = parseFloat(transaction.amount);
-    const isNegative = transaction.type === "withdrawal" || transaction.type === "trade" && transaction.subType === "buy";
+    const isNegative = transaction.type === "withdrawal" || 
+                      transaction.type === "investment" || 
+                      transaction.subType === "investment" ||
+                      (transaction.type === "trade" && transaction.subType === "buy");
     
     return (
       <span className={isNegative ? "text-destructive" : "text-success"}>
@@ -101,8 +113,16 @@ const Transactions = () => {
   };
   
   // Helper to get icon for transaction type
-  const getTransactionIcon = (type: string) => {
-    if (type === "deposit") {
+  const getTransactionIcon = (type: string, subType?: string) => {
+    if (type === "investment" || subType === "investment") {
+      return (
+        <div className="h-9 w-9 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+      );
+    } else if (type === "deposit") {
       return (
         <div className="h-9 w-9 rounded-full bg-success/20 text-success flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,19 +138,11 @@ const Transactions = () => {
           </svg>
         </div>
       );
-    } else if (type === "trade") {
+    } else if (type === "trade" || subType === "buy" || subType === "sell") {
       return (
         <div className="h-9 w-9 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-          </svg>
-        </div>
-      );
-    } else if (type === "investment") {
-      return (
-        <div className="h-9 w-9 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </div>
       );
@@ -237,22 +249,27 @@ const Transactions = () => {
                               key={transaction.id}
                               className="flex items-center gap-4 bg-neutral-900 p-3 rounded-lg"
                             >
-                              {getTransactionIcon(transaction.type)}
+                              {getTransactionIcon(transaction.type, transaction.subType)}
                               <div className="flex-grow">
                                 <div className="flex justify-between">
                                   <h4 className="font-medium capitalize">
-                                    {transaction.type === "trade"
+                                    {transaction.type === "trade" || transaction.subType === "buy" || transaction.subType === "sell"
                                       ? `${transaction.subType === "buy" ? "Buy" : "Sell"} ${transaction.assetSymbol || "Asset"}`
+                                      : transaction.type === "investment" || transaction.subType === "investment"
+                                      ? "Investment"
                                       : `${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}`}
                                   </h4>
                                   {formatAmount(transaction)}
                                 </div>
                                 <div className="flex justify-between">
                                   <div className="text-sm text-neutral-400">
-                                    {transaction.method && (
+                                    {transaction.description && (
+                                      <span className="text-xs text-neutral-500">{transaction.description}</span>
+                                    )}
+                                    {transaction.method && !transaction.description && (
                                       <span className="capitalize">{transaction.method.replace("_", " ")}</span>
                                     )}
-                                    {transaction.assetSymbol && transaction.type === "trade" && (
+                                    {transaction.assetSymbol && (transaction.type === "trade" || transaction.subType === "buy" || transaction.subType === "sell") && (
                                       <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded ml-2">
                                         {transaction.assetSymbol}
                                       </span>
