@@ -14,8 +14,210 @@ import {
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
-// Infer the schema types for insert operations
-const insertAssetSchema = { _type: {} as InsertAsset };
+export class DbStorage implements IStorage {
+  private db: ReturnType<typeof drizzle>;
+
+  constructor() {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL must be set");
+    }
+    
+    const sql = postgres(process.env.DATABASE_URL);
+    this.db = drizzle(sql, {
+      schema: {
+        users, assets, traders, copyRelationships, trades,
+        investmentPlans, investments, transactions, kycDocuments, watchlistItems
+      }
+    });
+  }
+
+  // User operations
+  async createUser(data: InsertUser): Promise<User> {
+    const [user] = await this.db.insert(users).values(data).returning();
+    return user;
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    const [user] = await this.db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await this.db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await this.db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async updateUser(id: number, data: Partial<InsertUser>): Promise<User> {
+    const [user] = await this.db.update(users).set(data).where(eq(users.id, id)).returning();
+    return user;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await this.db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  // Asset operations
+  async createAsset(data: InsertAsset): Promise<Asset> {
+    const [asset] = await this.db.insert(assets).values(data).returning();
+    return asset;
+  }
+
+  async getAssets(): Promise<Asset[]> {
+    return await this.db.select().from(assets);
+  }
+
+  async getAssetById(id: number): Promise<Asset | undefined> {
+    const [asset] = await this.db.select().from(assets).where(eq(assets.id, id));
+    return asset;
+  }
+
+  async updateAsset(id: number, data: Partial<InsertAsset>): Promise<Asset> {
+    const [asset] = await this.db.update(assets).set(data).where(eq(assets.id, id)).returning();
+    return asset;
+  }
+
+  // Trader operations
+  async createTrader(data: InsertTrader): Promise<Trader> {
+    const [trader] = await this.db.insert(traders).values(data).returning();
+    return trader;
+  }
+
+  async getTraders(): Promise<Trader[]> {
+    return await this.db.select().from(traders);
+  }
+
+  // Trade operations
+  async createTrade(data: InsertTrade): Promise<Trade> {
+    const [trade] = await this.db.insert(trades).values(data).returning();
+    return trade;
+  }
+
+  async getTrades(): Promise<Trade[]> {
+    return await this.db.select().from(trades).orderBy(desc(trades.createdAt));
+  }
+
+  async getTradesByUserId(userId: number): Promise<Trade[]> {
+    return await this.db.select().from(trades).where(eq(trades.userId, userId)).orderBy(desc(trades.createdAt));
+  }
+
+  // Investment plan operations
+  async createInvestmentPlan(data: InsertInvestmentPlan): Promise<InvestmentPlan> {
+    const [plan] = await this.db.insert(investmentPlans).values(data).returning();
+    return plan;
+  }
+
+  async getInvestmentPlans(): Promise<InvestmentPlan[]> {
+    return await this.db.select().from(investmentPlans);
+  }
+
+  async getInvestmentPlanById(id: number): Promise<InvestmentPlan | undefined> {
+    const [plan] = await this.db.select().from(investmentPlans).where(eq(investmentPlans.id, id));
+    return plan;
+  }
+
+  async updateInvestmentPlan(id: number, data: Partial<InsertInvestmentPlan>): Promise<InvestmentPlan> {
+    const [plan] = await this.db.update(investmentPlans).set(data).where(eq(investmentPlans.id, id)).returning();
+    return plan;
+  }
+
+  // Investment operations
+  async createInvestment(data: InsertInvestment): Promise<Investment> {
+    const [investment] = await this.db.insert(investments).values(data).returning();
+    return investment;
+  }
+
+  async getInvestments(): Promise<Investment[]> {
+    return await this.db.select().from(investments).orderBy(desc(investments.startDate));
+  }
+
+  async getInvestmentsByUserId(userId: number): Promise<Investment[]> {
+    return await this.db.select().from(investments).where(eq(investments.userId, userId)).orderBy(desc(investments.startDate));
+  }
+
+  // Transaction operations
+  async createTransaction(data: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await this.db.insert(transactions).values(data).returning();
+    return transaction;
+  }
+
+  async getTransactions(): Promise<Transaction[]> {
+    return await this.db.select().from(transactions).orderBy(desc(transactions.createdAt));
+  }
+
+  async getTransactionsByUserId(userId: number): Promise<Transaction[]> {
+    return await this.db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.createdAt));
+  }
+
+  async updateTransaction(id: number, data: Partial<InsertTransaction>): Promise<Transaction> {
+    const [transaction] = await this.db.update(transactions).set(data).where(eq(transactions.id, id)).returning();
+    return transaction;
+  }
+
+  // KYC operations
+  async createKycDocument(data: InsertKycDocument): Promise<KycDocument> {
+    const [doc] = await this.db.insert(kycDocuments).values(data).returning();
+    return doc;
+  }
+
+  async getKycDocuments(): Promise<KycDocument[]> {
+    return await this.db.select().from(kycDocuments).orderBy(desc(kycDocuments.submittedAt));
+  }
+
+  async getKycDocumentsByUserId(userId: number): Promise<KycDocument[]> {
+    return await this.db.select().from(kycDocuments).where(eq(kycDocuments.userId, userId)).orderBy(desc(kycDocuments.submittedAt));
+  }
+
+  async updateKycDocument(id: number, data: Partial<InsertKycDocument>): Promise<KycDocument> {
+    const [doc] = await this.db.update(kycDocuments).set(data).where(eq(kycDocuments.id, id)).returning();
+    return doc;
+  }
+
+  // Watchlist operations
+  async createWatchlistItem(data: InsertWatchlistItem): Promise<WatchlistItem> {
+    const [item] = await this.db.insert(watchlistItems).values(data).returning();
+    return item;
+  }
+
+  async getWatchlistByUserId(userId: number): Promise<WatchlistItem[]> {
+    return await this.db.select().from(watchlistItems).where(eq(watchlistItems.userId, userId));
+  }
+
+  async deleteWatchlistItem(userId: number, assetId: number): Promise<void> {
+    await this.db.delete(watchlistItems).where(
+      and(eq(watchlistItems.userId, userId), eq(watchlistItems.assetId, assetId))
+    );
+  }
+
+  // Copy relationship operations
+  async createCopyRelationship(data: InsertCopyRelationship): Promise<CopyRelationship> {
+    const [relationship] = await this.db.insert(copyRelationships).values(data).returning();
+    return relationship;
+  }
+
+  async getCopyRelationshipsByFollowerId(followerId: number): Promise<CopyRelationship[]> {
+    return await this.db.select().from(copyRelationships).where(eq(copyRelationships.followerId, followerId));
+  }
+
+  // Admin stats
+  async getAdminStats() {
+    const totalUsers = await this.db.select().from(users);
+    const totalTrades = await this.db.select().from(trades);
+    const totalInvestments = await this.db.select().from(investments);
+    const pendingKyc = await this.db.select().from(kycDocuments).where(eq(kycDocuments.verificationStatus, 'pending'));
+
+    return {
+      totalUsers: totalUsers.length,
+      totalTrades: totalTrades.length,
+      totalInvestments: totalInvestments.length,
+      pendingKyc: pendingKyc.length
+    };
+  }
+}
 const insertInvestmentPlanSchema = { _type: {} as InsertInvestmentPlan };
 
 export class DbStorage implements IStorage {

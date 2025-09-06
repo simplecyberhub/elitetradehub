@@ -271,24 +271,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/investment-plans", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
-      const validatedData = insertInvestmentPlanSchema.parse({
+      const validatedData = {
         name: req.body.name,
         description: req.body.description,
         minAmount: req.body.minAmount,
-        maxAmount: req.body.maxAmount,
-        expectedReturn: req.body.expectedReturn,
-        duration: req.body.duration,
-        isActive: req.body.isActive !== undefined ? req.body.isActive : true
-      });
+        maxAmount: req.body.maxAmount || null,
+        roiPercentage: req.body.roiPercentage || req.body.expectedReturn,
+        lockPeriodDays: req.body.lockPeriodDays || req.body.duration,
+        features: req.body.features || [],
+        status: req.body.status || 'active'
+      };
       const newPlan = await storageInstance.createInvestmentPlan(validatedData);
       res.status(201).json(newPlan);
     } catch (error) {
       console.error("Create investment plan error:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to create investment plan" });
-      }
+      res.status(500).json({ message: "Failed to create investment plan" });
     }
   });
 
