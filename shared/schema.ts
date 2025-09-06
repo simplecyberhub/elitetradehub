@@ -124,9 +124,14 @@ export const investments = pgTable("investments", {
   endDate: timestamp("end_date").notNull(),
 });
 
-export const insertInvestmentSchema = createInsertSchema(investments).omit({
+// Modified insertInvestmentSchema to handle date transformation
+export const insertInvestmentSchema = createInsertSchema(investments, {
+  startDate: z.preprocess((val) => new Date(val as string), z.date()),
+  endDate: z.preprocess((val) => new Date(val as string), z.date()),
+}).omit({
   id: true,
 });
+
 
 // Transactions (deposits, withdrawals) with admin approval system
 export const transactions = pgTable("transactions", {
