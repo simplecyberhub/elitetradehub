@@ -42,10 +42,10 @@ const Transactions = () => {
   const filteredTransactions = transactions.filter((transaction: any) => {
     if (filter === "all") return true;
     if (filter === "investment") {
-      return transaction.type === "investment" || transaction.subType === "investment";
+      return transaction.type === "investment";
     }
     if (filter === "trade") {
-      return transaction.type === "trade" || transaction.subType === "buy" || transaction.subType === "sell";
+      return transaction.type === "trade";
     }
     return transaction.type.toLowerCase() === filter.toLowerCase();
   });
@@ -88,9 +88,7 @@ const Transactions = () => {
     const amount = parseFloat(transaction.amount);
     let isNegative = false;
     
-    if (transaction.type === "withdrawal" || 
-        transaction.type === "investment" || 
-        transaction.subType === "investment") {
+    if (transaction.type === "withdrawal" || transaction.type === "investment") {
       isNegative = true;
     } else if (transaction.type === "trade") {
       // For trades, show the trade value (amount * price if available)
@@ -124,8 +122,8 @@ const Transactions = () => {
   };
   
   // Helper to get icon for transaction type
-  const getTransactionIcon = (type: string, subType?: string) => {
-    if (type === "investment" || subType === "investment") {
+  const getTransactionIcon = (type: string) => {
+    if (type === "investment") {
       return (
         <div className="h-9 w-9 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -260,13 +258,13 @@ const Transactions = () => {
                               key={transaction.id}
                               className="flex items-center gap-4 bg-neutral-900 p-3 rounded-lg"
                             >
-                              {getTransactionIcon(transaction.type, transaction.subType)}
+                              {getTransactionIcon(transaction.type)}
                               <div className="flex-grow">
                                 <div className="flex justify-between">
                                   <h4 className="font-medium capitalize">
                                     {transaction.type === "trade"
                                       ? `${transaction.subType ? transaction.subType.toUpperCase() : "Trade"} - ${transaction.assetSymbol || "Asset"}`
-                                      : transaction.type === "investment" || transaction.subType === "investment"
+                                      : transaction.type === "investment"
                                       ? "Investment"
                                       : `${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}`}
                                   </h4>
@@ -285,16 +283,17 @@ const Transactions = () => {
                                           </span>
                                         )}
                                       </div>
+                                    ) : transaction.type === "investment" ? (
+                                      <span className="text-xs text-neutral-500">
+                                        {transaction.description || "Investment Plan Purchase"}
+                                      </span>
                                     ) : (
                                       <>
                                         {transaction.description && (
                                           <span className="text-xs text-neutral-500">{transaction.description}</span>
                                         )}
-                                        {transaction.method && !transaction.description && (transaction.type !== "investment" && transaction.subType !== "investment") && (
+                                        {transaction.method && !transaction.description && (
                                           <span className="capitalize">{transaction.method.replace("_", " ")}</span>
-                                        )}
-                                        {(transaction.type === "investment" || transaction.subType === "investment") && !transaction.description && (
-                                          <span className="text-xs text-neutral-500">Investment Plan</span>
                                         )}
                                       </>
                                     )}
