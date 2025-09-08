@@ -4,9 +4,12 @@ import nodemailer from 'nodemailer';
 
 // Initialize SendGrid if available
 let mailService: typeof sgMail | null = null;
-if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your-sendgrid-api-key') {
+if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your-sendgrid-api-key' && process.env.SENDGRID_API_KEY.startsWith('SG.')) {
   mailService = sgMail;
   mailService.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('SendGrid initialized successfully');
+} else {
+  console.warn('SendGrid API key not properly configured - using fallback email service');
 }
 
 // Initialize Nodemailer transporter
@@ -38,9 +41,18 @@ async function sendEmailWithSendGrid(params: EmailParams): Promise<boolean> {
       return false;
     }
 
+    // Validate from email format for SendGrid
+    let fromEmail = params.from;
+    if (!fromEmail.includes('@')) {
+      fromEmail = 'noreply@elitestock.com'; // Use a default verified sender
+    }
+
     const emailData: any = {
       to: params.to,
-      from: params.from,
+      from: {
+        email: fromEmail,
+        name: 'EliteStock Trading Platform'
+      },
       subject: params.subject,
     };
     
@@ -50,8 +62,18 @@ async function sendEmailWithSendGrid(params: EmailParams): Promise<boolean> {
     await mailService.send(emailData);
     console.log('Email sent successfully via SendGrid to:', params.to);
     return true;
-  } catch (error) {
-    console.error('SendGrid email error:', error);
+  } catch (error: any) {
+    console.error('SendGrid email error:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body
+    });
+    
+    // Log specific SendGrid errors for debugging
+    if (error.code === 403) {
+      console.error('SendGrid 403 Error: Check API key permissions and sender verification');
+    }
+    
     return false;
   }
 }
@@ -116,5 +138,11 @@ export const emailTemplates = {
     subject: 'Withdrawal Request Received',
     text: `Your withdrawal request for ${amount} ${currency} has been received and is being processed.`,
     html: `<h1>Withdrawal Request</h1><p>Your withdrawal request for <strong>${amount} ${currency}</strong> has been received and is being processed.</p>`
+  }),
+
+  kycStatusUpdate: (status: string) => ({
+    subject: `KYC Verification ${status === 'verified' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Update'}`,
+    text: `Your KYC verification status has been updated to: ${status}. ${status === 'verified' ? 'You can now access all platform features.' : status === 'rejected' ? 'Please resubmit your documents with correct information.' : ''}`,
+    html: `<h1>KYC Verification ${status === 'verified' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Update'}</h1><p>Your KYC verification status has been updated to: <strong>${status}</strong>.</p>${status === 'verified' ? '<p>You can now access all platform features.</p>' : status === 'rejected' ? '<p>Please resubmit your documents with correct information.</p>' : ''}`
   })
 };
