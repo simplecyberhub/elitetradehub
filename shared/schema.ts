@@ -1,4 +1,4 @@
-import { pgTable, text, serial, numeric, boolean, jsonb, timestamp, integer, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, numeric, boolean, jsonb, timestamp, integer, varchar, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -119,10 +119,14 @@ export const investments = pgTable("investments", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   planId: integer("plan_id").notNull().references(() => investmentPlans.id),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  status: text("status").notNull(), // active, completed, canceled
-  startDate: timestamp("start_date").notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  startDate: timestamp("start_date").defaultNow().notNull(),
   endDate: timestamp("end_date").notNull(),
+  status: varchar("status", { length: 20 }).default("active").notNull(),
+  profit: decimal("profit", { precision: 15, scale: 2 }).default("0.00"),
+  totalReturn: decimal("total_return", { precision: 15, scale: 2 }).default("0.00"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Modified insertInvestmentSchema to handle date transformation
@@ -131,6 +135,10 @@ export const insertInvestmentSchema = createInsertSchema(investments, {
   endDate: z.preprocess((val) => new Date(val as string), z.date()),
 }).omit({
   id: true,
+  status: true, // Assuming status is managed internally or defaults correctly
+  profit: true, // Profit is usually calculated, not inserted directly
+  totalReturn: true, // Total return is usually calculated
+  completedAt: true, // Completed at is a timestamp of completion
 });
 
 

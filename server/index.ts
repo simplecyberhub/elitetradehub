@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // Configure CORS to allow credentials
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? process.env.FRONTEND_URL || true
     : true,
   credentials: true,
@@ -66,6 +66,28 @@ app.use((req, res, next) => {
   const { marketDataService } = await import('./market-data');
   marketDataService.startPeriodicUpdates();
 
+  // Start investment maturity processing (check every hour)
+  const storageInstance = await import('./storage');
+  const storage = await storageInstance.storage;
+
+  setInterval(async () => {
+    try {
+      await storage.processMaturedInvestments();
+    } catch (error) {
+      console.error('Error in investment processing scheduler:', error);
+    }
+  }, 60 * 60 * 1000); // Every hour
+
+  // Process matured investments on startup
+  setTimeout(async () => {
+    try {
+      await storage.processMaturedInvestments();
+    } catch (error) {
+      console.error('Error in initial investment processing:', error);
+    }
+  }, 10000); // 10 seconds after startup
+
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -93,5 +115,7 @@ app.use((req, res, next) => {
     reusePort: false,
   }, () => {
     log(`serving on port ${port}`);
+    console.log(`Investment processing: Active`);
+    console.log(`Market data updates: Active`);
   });
 })();

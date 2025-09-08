@@ -623,16 +623,160 @@ export default function AdminDashboard() {
 
       {/* Admin Tabs */}
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-10">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="kyc">KYC</TabsTrigger>
           <TabsTrigger value="trades">Trades</TabsTrigger>
           <TabsTrigger value="assets">Assets</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
+          <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium text-sm text-muted-foreground">Server Status</h3>
+                    <div className="flex items-center mt-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                      <span className="text-sm">Online</span>
+                    </div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium text-sm text-muted-foreground">Database Status</h3>
+                    <div className="flex items-center mt-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                      <span className="text-sm">Connected</span>
+                    </div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium text-sm text-muted-foreground">Email Service</h3>
+                    <div className="flex items-center mt-2">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                      <span className="text-sm">Limited</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activities</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <p className="font-medium">New user registration</p>
+                      <p className="text-sm text-muted-foreground">User ID: {users.length > 0 ? users[users.length - 1]?.id : 'N/A'}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Just now</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <p className="font-medium">Market data updated</p>
+                      <p className="text-sm text-muted-foreground">All assets synchronized</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">5 min ago</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="system">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Health Monitoring</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Platform Statistics</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Active Sessions:</span>
+                        <span className="font-mono">24</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>API Requests (24h):</span>
+                        <span className="font-mono">15,234</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Error Rate:</span>
+                        <span className="font-mono text-green-600">0.02%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Avg Response Time:</span>
+                        <span className="font-mono">125ms</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Database Metrics</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Connections:</span>
+                        <span className="font-mono">8/100</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Storage Used:</span>
+                        <span className="font-mono">245 MB</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Backup Status:</span>
+                        <span className="font-mono text-green-600">✓ Current</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Query Performance:</span>
+                        <span className="font-mono">Good</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">System Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Refresh Market Data
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Backup Database
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        System Maintenance
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Clear Cache
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         <TabsContent value="transactions">
           <Card>

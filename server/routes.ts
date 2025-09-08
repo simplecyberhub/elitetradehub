@@ -152,17 +152,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allUsers = await storageInstance.getAllUsers();
       const allTrades = await storageInstance.getAllTrades();
       const allDocuments = await storageInstance.getAllKycDocuments();
+      const investmentStats = await storageInstance.getInvestmentAnalytics();
 
       const totalUsers = allUsers.length;
       const totalTrades = allTrades.length;
-      const totalInvestments = 0; // Placeholder, would need getAllInvestments method
+      const totalInvestments = investmentStats.totalInvestments;
       const pendingKyc = allDocuments.filter(doc => doc.verificationStatus === 'pending').length;
 
       res.status(200).json({
         totalUsers,
         totalTrades,
         totalInvestments,
-        pendingKyc
+        pendingKyc,
+        investmentStats
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to get admin stats" });

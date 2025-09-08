@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, lte, count, sum } from "drizzle-orm";
 import dotenv from 'dotenv';
 dotenv.config();
 import {
@@ -315,10 +315,137 @@ export class DbStorage implements IStorage {
   }
 
   // Investment operations
-  async createInvestment(data: InsertInvestment): Promise<Investment> {
-    const [investment] = await this.db.insert(investments).values(data).returning();
-    return investment;
+  async createInvestment(investment: any): Promise<Investment> {
+    const plan = await this.getInvestmentPlan(investment.planId);
+    if (!plan) {
+      throw new Error('Investment plan not found');
+    }
+
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + parseInt(plan.lockPeriodDays.toString()));
+
+    const [newInvestment] = await this.db
+      .insert(investments)
+      .values({
+        ...investment,
+        startDate,
+        endDate,
+        status: 'active'
+      })
+      .returning();
+
+    return newInvestment;
   }
+
+  async processMaturedInvestments(): Promise<void> {
+    try {
+      console.log('Processing matured investments...');
+
+      const maturedInvestments = await this.db
+        .select()
+        .from(investments)
+        .where(
+          and(
+            eq(investments.status, 'active'),
+            lte(investments.endDate, new Date())
+          )
+        );
+
+      console.log(`Found ${maturedInvestments.length} matured investments`);
+
+      for (const investment of maturedInvestments) {
+        try {
+          const plan = await this.getInvestmentPlan(investment.planId);
+          if (!plan) {
+            console.error(`Plan not found for investment ${investment.id}`);
+            continue;
+          }
+
+          const principal = parseFloat(investment.amount.toString());
+          const roiPercentage = parseFloat(plan.roiPercentage.toString());
+          const profit = (principal * roiPercentage) / 100;
+          const totalReturn = principal + profit;
+
+          // Update investment status to completed
+          await this.db
+            .update(investments)
+            .set({
+              status: 'completed',
+              completedAt: new Date(),
+              profit: profit.toString(),
+              totalReturn: totalReturn.toString()
+            })
+            .where(eq(investments.id, investment.id));
+
+          // Credit the total return to user's balance
+          await this.updateUserBalance(investment.userId, totalReturn, true);
+
+          // Create profit transaction record
+          await this.createTransaction({
+            userId: investment.userId,
+            type: 'investment_return',
+            amount: totalReturn.toString(),
+            status: 'completed',
+            method: 'investment_maturity',
+            description: `Investment maturity return for ${plan.name} - Principal: $${principal}, Profit: $${profit.toFixed(2)}`,
+            completedAt: new Date()
+          });
+
+          console.log(`Processed investment ${investment.id}: Principal $${principal}, Profit $${profit.toFixed(2)}, Total Return $${totalReturn.toFixed(2)}`);
+        } catch (error) {
+          console.error(`Error processing investment ${investment.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing matured investments:', error);
+    }
+  }
+
+  async getInvestmentAnalytics(): Promise<any> {
+    try {
+      const totalInvestments = await this.db
+        .select({ count: count() })
+        .from(investments);
+
+      const activeInvestments = await this.db
+        .select({ count: count() })
+        .from(investments)
+        .where(eq(investments.status, 'active'));
+
+      const completedInvestments = await this.db
+        .select({ count: count() })
+        .from(investments)
+        .where(eq(investments.status, 'completed'));
+
+      const totalInvested = await this.db
+        .select({ total: sum(investments.amount) })
+        .from(investments);
+
+      const totalProfits = await this.db
+        .select({ total: sum(investments.profit) })
+        .from(investments)
+        .where(eq(investments.status, 'completed'));
+
+      return {
+        totalInvestments: totalInvestments[0]?.count || 0,
+        activeInvestments: activeInvestments[0]?.count || 0,
+        completedInvestments: completedInvestments[0]?.count || 0,
+        totalInvested: totalInvested[0]?.total || '0',
+        totalProfits: totalProfits[0]?.total || '0'
+      };
+    } catch (error) {
+      console.error('Error getting investment analytics:', error);
+      return {
+        totalInvestments: 0,
+        activeInvestments: 0,
+        completedInvestments: 0,
+        totalInvested: '0',
+        totalProfits: '0'
+      };
+    }
+  }
+
 
   async getInvestments(): Promise<Investment[]> {
     return await this.db.select().from(investments).orderBy(desc(investments.startDate));
