@@ -80,6 +80,24 @@ export async function seedDatabase(storage: DbStorage) {
       }
       console.log("Created crypto assets");
 
+      // Initialize default settings
+      const defaultSettings = [
+        { category: 'trading', key: 'trading_min_amount', value: '10.00' },
+        { category: 'trading', key: 'trading_max_amount', value: '10000.00' },
+        { category: 'trading', key: 'trading_fee_percentage', value: '0.1' },
+        { category: 'email', key: 'smtp_host', value: 'smtp.gmail.com' },
+        { category: 'email', key: 'smtp_port', value: '587' },
+        { category: 'email', key: 'from_email', value: 'noreply@elitestock.com' }
+      ];
+
+      for (const setting of defaultSettings) {
+        const existing = await storage.getSetting(setting.key);
+        if (!existing) {
+          await storage.createSetting(setting);
+        }
+      }
+      console.log("Initialized default settings");
+
       // Seed assets (forex)
       const forexAssets: InsertAsset[] = [
         { symbol: "EUR/USD", name: "Euro/US Dollar", type: "forex", price: "1.0742", change24h: "-0.23", volume24h: "98765432109", marketCap: "0", logoUrl: "" },

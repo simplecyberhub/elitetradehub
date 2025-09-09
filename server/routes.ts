@@ -472,6 +472,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {} as Record<string, Record<string, string>>);
 
+      // Ensure default structure even if no settings exist
+      if (Object.keys(groupedSettings).length === 0) {
+        groupedSettings.trading = {
+          trading_min_amount: '10.00',
+          trading_max_amount: '10000.00',
+          trading_fee_percentage: '0.1'
+        };
+        groupedSettings.email = {
+          smtp_host: 'smtp.gmail.com',
+          smtp_port: '587',
+          from_email: 'noreply@elitestock.com'
+        };
+      }
+
       res.status(200).json(groupedSettings);
     } catch (error) {
       console.error("Get settings error:", error);
@@ -510,15 +524,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { key } = req.params;
       const { value } = req.body;
       
-      const updatedSetting = await storageInstance.updateSetting(key, value);
+      let setting = await storageInstance.updateSetting(key, value);
       
-      if (!updatedSetting) {
-        return res.status(404).json({ message: "Setting not found" });
+      if (!setting) {
+        // Try to create the setting if it doesn't exist
+        const category = key.includes('trading_') ? 'trading' : 'email';
+        setting = await storageInstance.createSetting({
+          category,
+          key,
+          value
+        });
       }
       
       res.status(200).json({
         message: "Setting updated successfully",
-        setting: updatedSetting
+        setting
       });
     } catch (error) {
       console.error("Update setting error:", error);

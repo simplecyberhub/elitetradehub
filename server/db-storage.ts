@@ -460,6 +460,10 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async getAllInvestments(): Promise<Investment[]> {
+    return await this.db.select().from(investments).orderBy(desc(investments.startDate));
+  }
+
   async updateInvestment(id: number, data: Partial<Investment>): Promise<Investment | undefined> {
     const result = await this.db.update(investments).set(data).where(eq(investments.id, id)).returning();
     return result[0];
@@ -573,10 +577,19 @@ export class DbStorage implements IStorage {
     return await this.db.select().from(watchlistItems).where(eq(watchlistItems.userId, userId));
   }
 
-  async deleteWatchlistItem(userId: number, assetId: number): Promise<void> {
-    await this.db.delete(watchlistItems).where(
-      and(eq(watchlistItems.userId, userId), eq(watchlistItems.assetId, assetId))
-    );
+  async deleteWatchlistItem(id: number): Promise<boolean>;
+  async deleteWatchlistItem(userId: number, assetId: number): Promise<void>;
+  async deleteWatchlistItem(param1: number, param2?: number): Promise<boolean | void> {
+    if (param2 === undefined) {
+      // Single parameter - delete by ID
+      const result = await this.db.delete(watchlistItems).where(eq(watchlistItems.id, param1));
+      return result.rowCount > 0;
+    } else {
+      // Two parameters - delete by userId and assetId
+      await this.db.delete(watchlistItems).where(
+        and(eq(watchlistItems.userId, param1), eq(watchlistItems.assetId, param2))
+      );
+    }
   }
 
   async getWatchlistItem(id: number): Promise<WatchlistItem | undefined> {
@@ -623,7 +636,7 @@ export class DbStorage implements IStorage {
     }
 
     const result = await this.db.delete(copyRelationships).where(eq(copyRelationships.id, id));
-    return result.length > 0;
+    return result.rowCount > 0;
   }
 
   // Settings operations

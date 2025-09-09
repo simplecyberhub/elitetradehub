@@ -192,9 +192,10 @@ export default function AdminDashboard() {
         safeFetch("/api/admin/assets", setAssets, []),
         safeFetch("/api/admin/investment-plans", setInvestmentPlans, []),
         safeFetch("/api/admin/investments", setInvestments, []),
-        safeFetch("/api/admin/settings", setSettings, []),
-        safeFetch("/api/admin/kyc", setKycDocuments, []),
-        safeFetch("/api/admin/system-stats", setSystemStats, {}),
+        safeFetch("/api/admin/settings", (data) => {
+          setSettings(data);
+          setSystemSettings(data);
+        }, {}),
       ]);
 
     } catch (error) {
@@ -737,12 +738,13 @@ export default function AdminDashboard() {
 
       {/* Admin Tabs */}
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="investments">Investments</TabsTrigger>
           <TabsTrigger value="assets">Assets</TabsTrigger>
+          <TabsTrigger value="plans">Plans</TabsTrigger>
           <TabsTrigger value="kyc">KYC</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
