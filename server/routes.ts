@@ -230,18 +230,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const assetId = parseInt(req.params.id);
       const updates = req.body;
-      
+
       // Map currentPrice to price if it exists
       if (updates.currentPrice && !updates.price) {
         updates.price = updates.currentPrice;
       }
-      
+
       const updatedAsset = await storageInstance.updateAsset(assetId, updates);
-      
+
       if (!updatedAsset) {
         return res.status(404).json({ message: "Asset not found" });
       }
-      
+
       res.status(200).json(updatedAsset);
     } catch (error) {
       console.error("Update asset error:", error);
@@ -253,11 +253,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const assetId = parseInt(req.params.id);
       const success = await storageInstance.deleteAsset(assetId);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Asset not found" });
       }
-      
+
       res.status(204).send();
     } catch (error) {
       console.error("Delete asset error:", error);
@@ -333,11 +333,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const planId = parseInt(req.params.id);
       const updates = req.body;
       const updatedPlan = await storageInstance.updateInvestmentPlan(planId, updates);
-      
+
       if (!updatedPlan) {
         return res.status(404).json({ message: "Investment plan not found" });
       }
-      
+
       res.status(200).json(updatedPlan);
     } catch (error) {
       console.error("Update investment plan error:", error);
@@ -349,11 +349,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const planId = parseInt(req.params.id);
       const success = await storageInstance.deleteInvestmentPlan(planId);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Investment plan not found" });
       }
-      
+
       res.status(204).send();
     } catch (error) {
       console.error("Delete investment plan error:", error);
@@ -365,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/settings", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
       const allSettings = await storageInstance.getAllSettings();
-      
+
       // Group settings by category for easier frontend handling
       const groupedSettings = allSettings.reduce((acc, setting) => {
         if (!acc[setting.category]) {
@@ -967,7 +967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Investment routes
-  app.post("/api/investments", async (req: Request, res: Response) => {
+  app.post("/api/investments", requireAuth, async (req: Request, res: Response) => {
     try {
       const validatedData = insertInvestmentSchema.parse(req.body);
 

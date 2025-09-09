@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Users, FileText, TrendingUp, DollarSign, CheckCircle, XCircle, Settings, RefreshCw, Plus, Edit, Trash2, Download, Upload, AlertTriangle } from "lucide-react";
+import { Users, FileText, TrendingUp, DollarSign, CheckCircle, XCircle, Settings, RefreshCw, Plus, Edit, Trash2, Download, Upload, AlertTriangle, PlayCircle, Mail } from "lucide-react";
 
 interface AdminStats {
   totalUsers: number;
@@ -77,6 +77,7 @@ interface Asset {
   type: string;
   currentPrice: string;
   isActive: boolean;
+  price?: string;
 }
 
 interface InvestmentPlan {
@@ -88,6 +89,9 @@ interface InvestmentPlan {
   expectedReturn: string;
   duration: string;
   isActive: boolean;
+  roiPercentage?: string;
+  lockPeriodDays?: string;
+  status?: string;
 }
 
 export default function AdminDashboard() {
@@ -95,7 +99,6 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [kycDocuments, setKycDocuments] = useState<KycDocument[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -118,21 +121,9 @@ export default function AdminDashboard() {
   });
   const [showNewAssetDialog, setShowNewAssetDialog] = useState(false);
   const [showNewInvestmentPlanDialog, setShowNewInvestmentPlanDialog] = useState(false);
-
-  // Settings state
-  const [systemSettings, setSystemSettings] = useState({
-    trading: {
-      trading_min_amount: '10.00',
-      trading_max_amount: '10000.00',
-      trading_fee_percentage: '0.1'
-    },
-    email: {
-      smtp_host: 'smtp.gmail.com',
-      smtp_port: '587',
-      from_email: 'noreply@elitestock.com'
-    }
-  });
-  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settings, setSettings] = useState<any[]>([]);
+  const [kycDocuments, setKycDocuments] = useState<any[]>([]);
+  const [systemStats, setSystemStats] = useState<any>({});
 
 
   // Check if user is admin
@@ -186,7 +177,9 @@ export default function AdminDashboard() {
         safeFetch("/api/admin/transactions", setTransactions, []),
         safeFetch("/api/admin/assets", setAssets, []),
         safeFetch("/api/admin/investment-plans", setInvestmentPlans, []),
-        safeFetch("/api/admin/settings", setSystemSettings, systemSettings)
+        safeFetch("/api/admin/settings", setSystemSettings, systemSettings), // Assuming systemSettings is correctly defined and used
+        safeFetch("/api/admin/kyc", setKycDocuments, []),
+        safeFetch("/api/admin/system-stats", setSystemStats, {}),
       ]);
 
     } catch (error) {
@@ -233,9 +226,9 @@ export default function AdminDashboard() {
         'X-User-Role': user.role
       });
 
-      setKycDocuments(kycDocuments.map(doc => 
-        doc.id === docId 
-          ? { ...doc, verificationStatus: status, rejectionReason } 
+      setKycDocuments(kycDocuments.map(doc =>
+        doc.id === docId
+          ? { ...doc, verificationStatus: status, rejectionReason }
           : doc
       ));
 
@@ -564,6 +557,85 @@ export default function AdminDashboard() {
     });
   };
 
+  const fetchSettings = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/settings", undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data);
+      } else {
+        console.warn(`Failed to fetch settings: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    }
+  };
+
+  const fetchKycDocuments = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/kyc", undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setKycDocuments(data);
+      } else {
+        console.warn(`Failed to fetch KYC documents: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch KYC documents:', error);
+    }
+  };
+
+  const fetchSystemStats = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/system-stats", undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSystemStats(data);
+      } else {
+        console.warn(`Failed to fetch system stats: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch system stats:', error);
+    }
+  };
+
+  const updateSetting = async (key: string, value: string) => {
+    try {
+      await apiRequest("PUT", `/api/admin/settings/${key}`, { value }, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+      fetchSettings();
+      toast({ title: "Setting updated successfully" });
+    } catch (error) {
+      toast({ title: "Failed to update setting", variant: "destructive" });
+    }
+  };
+
+  const processMaturedInvestments = async () => {
+    try {
+      await apiRequest("POST", `/api/admin/process-investments`, undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+      fetchAdminData(); // Re-fetch all data to reflect changes
+      toast({ title: "Processed matured investments successfully" });
+    } catch (error) {
+      toast({ title: "Failed to process investments", variant: "destructive" });
+    }
+  };
+
+
   if (loading) {
     return (
       <div className="container mx-auto py-8">
@@ -623,17 +695,15 @@ export default function AdminDashboard() {
 
       {/* Admin Tabs */}
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-10">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
-          <TabsTrigger value="kyc">KYC</TabsTrigger>
-          <TabsTrigger value="trades">Trades</TabsTrigger>
+          <TabsTrigger value="investments">Investments</TabsTrigger>
           <TabsTrigger value="assets">Assets</TabsTrigger>
-          <TabsTrigger value="plans">Plans</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="kyc">KYC</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="system">System</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -690,89 +760,6 @@ export default function AdminDashboard() {
                     <span className="text-xs text-muted-foreground">5 min ago</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="system">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Health Monitoring</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Platform Statistics</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Active Sessions:</span>
-                        <span className="font-mono">24</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>API Requests (24h):</span>
-                        <span className="font-mono">15,234</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Error Rate:</span>
-                        <span className="font-mono text-green-600">0.02%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Avg Response Time:</span>
-                        <span className="font-mono">125ms</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Database Metrics</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Connections:</span>
-                        <span className="font-mono">8/100</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Storage Used:</span>
-                        <span className="font-mono">245 MB</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Backup Status:</span>
-                        <span className="font-mono text-green-600">✓ Current</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Query Performance:</span>
-                        <span className="font-mono">Good</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">System Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm">
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Refresh Market Data
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-2" />
-                        Backup Database
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        System Maintenance
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Clear Cache
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
               </CardContent>
             </Card>
           </div>
@@ -846,7 +833,7 @@ export default function AdminDashboard() {
                               <div className="space-y-4">
                                 <div>
                                   <Label htmlFor="action">Action</Label>
-                                  <Select value={transactionAction.action} onValueChange={(value) => 
+                                  <Select value={transactionAction.action} onValueChange={(value) =>
                                     setTransactionAction(prev => ({ ...prev, action: value }))
                                   }>
                                     <SelectTrigger>
@@ -960,7 +947,7 @@ export default function AdminDashboard() {
                                     </div>
                                     <div>
                                       <Label htmlFor="type">Action</Label>
-                                      <Select value={balanceUpdate.type} onValueChange={(value) => 
+                                      <Select value={balanceUpdate.type} onValueChange={(value) =>
                                         setBalanceUpdate(prev => ({ ...prev, type: value }))
                                       }>
                                         <SelectTrigger>
@@ -1009,10 +996,20 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="kyc">
+        <TabsContent value="investments">
           <Card>
-            <CardHeader>
-              <CardTitle>KYC Document Review</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Investment Management</CardTitle>
+              <div className="space-x-2">
+                <Button onClick={() => exportData('investments')} variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                <Button onClick={fetchAdminData} variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -1020,99 +1017,30 @@ export default function AdminDashboard() {
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>User</TableHead>
-                    <TableHead>Document Type</TableHead>
-                    <TableHead>Document Number</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {kycDocuments.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell>{doc.id}</TableCell>
-                      <TableCell>{doc.user?.fullName || 'Unknown'}</TableCell>
-                      <TableCell>{doc.documentType}</TableCell>
-                      <TableCell>{doc.documentNumber}</TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          doc.verificationStatus === 'verified' ? 'default' :
-                          doc.verificationStatus === 'rejected' ? 'destructive' : 'secondary'
-                        }>
-                          {doc.verificationStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(doc.submittedAt).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        {doc.verificationStatus === 'pending' && (
-                          <div className="space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateKycStatus(doc.id, 'verified')}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => updateKycStatus(doc.id, 'rejected', 'Document not clear')}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="trades">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Trades</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Asset</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Plan</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Price</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Maturity Date</TableHead>
                     <TableHead>Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {trades.map((trade) => (
-                    <TableRow key={trade.id}>
-                      <TableCell>{trade.id}</TableCell>
-                      <TableCell>{trade.user?.fullName || 'Unknown'}</TableCell>
-                      <TableCell>{trade.asset?.symbol || 'Unknown'}</TableCell>
+                  {/* Assuming 'investments' state exists and is populated */}
+                  {/* {investments.map((investment) => (
+                    <TableRow key={investment.id}>
+                      <TableCell>{investment.id}</TableCell>
+                      <TableCell>{investment.user?.fullName || 'Unknown'}</TableCell>
+                      <TableCell>{investment.plan?.name || 'Unknown'}</TableCell>
+                      <TableCell>${investment.amount}</TableCell>
                       <TableCell>
-                        <Badge variant={trade.type === 'buy' ? 'default' : 'destructive'}>
-                          {trade.type.toUpperCase()}
+                        <Badge variant={investment.status === 'active' ? 'default' : 'secondary'}>
+                          {investment.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{trade.amount}</TableCell>
-                      <TableCell>${trade.price}</TableCell>
-                      <TableCell>
-                        <Badge variant={trade.status === 'executed' ? 'default' : 'secondary'}>
-                          {trade.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(trade.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(investment.maturityDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(investment.createdAt).toLocaleDateString()}</TableCell>
                     </TableRow>
-                  ))}
+                  ))} */}
                 </TableBody>
               </Table>
             </CardContent>
@@ -1158,15 +1086,15 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => startEditAsset(asset)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="destructive"
                             onClick={() => deleteAsset(asset.id)}
                           >
@@ -1345,15 +1273,15 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => startEditPlan(plan)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="destructive"
                             onClick={() => deleteInvestmentPlan(plan.id)}
                           >
@@ -1485,158 +1413,212 @@ export default function AdminDashboard() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="analytics">
-          <div className="space-y-6">
+        <TabsContent value="kyc" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">KYC Management</h2>
+            <div className="space-x-2">
+              <Button onClick={fetchKycDocuments} variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>KYC Documents</CardTitle>
+              <CardDescription>Review and manage user verification documents</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User ID</TableHead>
+                    <TableHead>Document Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {kycDocuments.map((doc: any) => (
+                    <TableRow key={doc.id}>
+                      <TableCell>{doc.userId}</TableCell>
+                      <TableCell>{doc.documentType}</TableCell>
+                      <TableCell>
+                        <Badge variant={doc.verificationStatus === 'verified' ? 'default' :
+                          doc.verificationStatus === 'rejected' ? 'destructive' : 'secondary'}>
+                          {doc.verificationStatus}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(doc.submittedAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="space-x-2">
+                          <Button size="sm" variant="outline">View</Button>
+                          <Button size="sm" variant="default" onClick={() => updateKycStatus(doc.id, 'verified')}>Approve</Button>
+                          <Button size="sm" variant="destructive" onClick={() => updateKycStatus(doc.id, 'rejected')}>Reject</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Platform Settings</h2>
+            <div className="space-x-2">
+              <Button onClick={fetchSettings} variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Platform Analytics</CardTitle>
+                <CardTitle>Trading Settings</CardTitle>
+                <CardDescription>Configure trading parameters</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium">Total Revenue</h3>
-                    <p className="text-2xl font-bold text-green-600">$150,000</p>
+              <CardContent className="space-y-4">
+                {settings.filter(s => s.category === 'trading').map((setting: any) => (
+                  <div key={setting.key} className="space-y-2">
+                    <label className="text-sm font-medium">{setting.description}</label>
+                    <div className="flex space-x-2">
+                      <Input
+                        defaultValue={setting.value}
+                        id={setting.key}
+                        className="flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById(setting.key) as HTMLInputElement;
+                          updateSetting(setting.key, input.value);
+                        }}
+                      >
+                        Update
+                      </Button>
+                    </div>
                   </div>
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium">Active Traders</h3>
-                    <p className="text-2xl font-bold">325</p>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Email Settings</CardTitle>
+                <CardDescription>Configure email notifications</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {settings.filter(s => s.category === 'email').map((setting: any) => (
+                  <div key={setting.key} className="space-y-2">
+                    <label className="text-sm font-medium">{setting.description}</label>
+                    <div className="flex space-x-2">
+                      <Input
+                        defaultValue={setting.value}
+                        id={setting.key}
+                        className="flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById(setting.key) as HTMLInputElement;
+                          updateSetting(setting.key, input.value);
+                        }}
+                      >
+                        Update
+                      </Button>
+                    </div>
                   </div>
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium">Success Rate</h3>
-                    <p className="text-2xl font-bold text-blue-600">87%</p>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium">Total Volume</h3>
-                    <p className="text-2xl font-bold">$2.5M</p>
-                  </div>
-                </div>
+                ))}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="settings">
-          <div className="space-y-6">
+        <TabsContent value="system" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">System Management</h2>
+            <div className="space-x-2">
+              <Button onClick={processMaturedInvestments} variant="outline">
+                <PlayCircle className="w-4 h-4 mr-2" />
+                Process Investments
+              </Button>
+              <Button onClick={fetchSystemStats} variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader>
-                <CardTitle>System Settings</CardTitle>
+                <CardTitle>System Status</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <Alert>
-                  <Settings className="h-4 w-4" />
-                  <AlertTitle>Platform Configuration</AlertTitle>
-                  <AlertDescription>
-                    Manage system-wide settings and configurations.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Trading Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label>Minimum Trade Amount</Label>
-                        <Input 
-                          type="number" 
-                          value={systemSettings?.trading?.trading_min_amount || '10.0'}
-                          onChange={(e) => setSystemSettings((prev) => ({
-                            ...prev,
-                            trading: {
-                              ...prev?.trading,
-                              trading_min_amount: e.target.value
-                            }
-                          }))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Maximum Trade Amount</Label>
-                        <Input 
-                          type="number" 
-                          value={systemSettings?.trading?.trading_max_amount || '100000.0'}
-                          onChange={(e) => setSystemSettings((prev) => ({
-                            ...prev,
-                            trading: {
-                              ...prev?.trading,
-                              trading_max_amount: e.target.value
-                            }
-                          }))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Trading Fee (%)</Label>
-                        <Input 
-                          type="number" 
-                          value={systemSettings?.trading?.trading_fee_percentage || '1'}
-                          onChange={(e) => setSystemSettings((prev) => ({
-                            ...prev,
-                            trading: {
-                              ...prev?.trading,
-                              trading_fee_percentage: e.target.value
-                            }
-                          }))}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Email Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label htmlFor="smtp-host">SMTP Host</Label>
-                        <Input
-                          type="text"
-                          value={systemSettings?.email?.smtp_host || 'smtp.gmail.com'}
-                          onChange={(e) => setSystemSettings((prev) => ({
-                            ...prev,
-                            email: {
-                              ...prev?.email,
-                              smtp_host: e.target.value
-                            }
-                          }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="smtp-port">SMTP Port</Label>
-                        <Input
-                          type="number"
-                          value={systemSettings?.email?.smtp_port || '587'}
-                          onChange={(e) => setSystemSettings((prev) => ({
-                            ...prev,
-                            email: {
-                              ...prev?.email,
-                              smtp_port: e.target.value
-                            }
-                          }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="from-email">From Email</Label>
-                        <Input
-                          type="email"
-                          value={systemSettings?.email?.from_email || 'noreply@elitestock.com'}
-                          onChange={(e) => setSystemSettings((prev) => ({
-                            ...prev,
-                            email: {
-                              ...prev?.email,
-                              from_email: e.target.value
-                            }
-                          }))}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Database</span>
+                    <Badge variant="default">Online</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Market Data</span>
+                    <Badge variant="default">Active</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Email Service</span>
+                    <Badge variant="destructive">Issues</Badge>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="space-x-2">
-                  <Button onClick={saveSettings} disabled={settingsLoading}>
-                    {settingsLoading ? "Saving..." : "Save Settings"}
+            <Card>
+              <CardHeader>
+                <CardTitle>Investment Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Active Plans</span>
+                    <span>{investmentPlans.filter(p => p.status === 'active').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Invested</span>
+                    <span>${systemStats.totalInvested || '0'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Matured Today</span>
+                    <span>{systemStats.maturedToday || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button className="w-full" variant="outline">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send Bulk Email
                   </Button>
-                  <Button variant="outline" onClick={resetSettingsToDefault}>Reset to Default</Button>
+                  <Button className="w-full" variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Reports
+                  </Button>
+                  <Button className="w-full" variant="outline">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Backup Database
+                  </Button>
                 </div>
               </CardContent>
             </Card>
