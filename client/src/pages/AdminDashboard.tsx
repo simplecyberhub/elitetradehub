@@ -103,6 +103,7 @@ export default function AdminDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [investmentPlans, setInvestmentPlans] = useState<InvestmentPlan[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [balanceUpdate, setBalanceUpdate] = useState({ userId: 0, amount: '', type: 'add' });
@@ -124,6 +125,19 @@ export default function AdminDashboard() {
   const [settings, setSettings] = useState<any[]>([]);
   const [kycDocuments, setKycDocuments] = useState<any[]>([]);
   const [systemStats, setSystemStats] = useState<any>({});
+  const [systemSettings, setSystemSettings] = useState<any>({
+    trading: {
+      trading_min_amount: '10.00',
+      trading_max_amount: '10000.00',
+      trading_fee_percentage: '0.1'
+    },
+    email: {
+      smtp_host: 'smtp.gmail.com',
+      smtp_port: '587',
+      from_email: 'noreply@elitestock.com'
+    }
+  });
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
 
   // Check if user is admin
@@ -177,7 +191,8 @@ export default function AdminDashboard() {
         safeFetch("/api/admin/transactions", setTransactions, []),
         safeFetch("/api/admin/assets", setAssets, []),
         safeFetch("/api/admin/investment-plans", setInvestmentPlans, []),
-        safeFetch("/api/admin/settings", setSystemSettings, systemSettings), // Assuming systemSettings is correctly defined and used
+        safeFetch("/api/admin/investments", setInvestments, []),
+        safeFetch("/api/admin/settings", setSettings, []),
         safeFetch("/api/admin/kyc", setKycDocuments, []),
         safeFetch("/api/admin/system-stats", setSystemStats, {}),
       ]);
@@ -635,6 +650,33 @@ export default function AdminDashboard() {
     }
   };
 
+  const sendBulkEmail = async () => {
+    try {
+      await apiRequest("POST", `/api/admin/bulk-email`, {
+        subject: "Platform Update",
+        message: "Important update from EliteStock Trading Platform"
+      }, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+      toast({ title: "Bulk email sent successfully" });
+    } catch (error) {
+      toast({ title: "Failed to send bulk email", variant: "destructive" });
+    }
+  };
+
+  const backupDatabase = async () => {
+    try {
+      await apiRequest("POST", `/api/admin/backup`, undefined, {
+        'X-User-Id': user.id.toString(),
+        'X-User-Role': user.role
+      });
+      toast({ title: "Database backup initiated" });
+    } catch (error) {
+      toast({ title: "Failed to initiate backup", variant: "destructive" });
+    }
+  };
+
 
   if (loading) {
     return (
@@ -1025,8 +1067,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* Assuming 'investments' state exists and is populated */}
-                  {/* {investments.map((investment) => (
+                  {investments.map((investment) => (
                     <TableRow key={investment.id}>
                       <TableCell>{investment.id}</TableCell>
                       <TableCell>{investment.user?.fullName || 'Unknown'}</TableCell>
@@ -1037,10 +1078,10 @@ export default function AdminDashboard() {
                           {investment.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(investment.maturityDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{investment.maturityDate ? new Date(investment.maturityDate).toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell>{new Date(investment.createdAt).toLocaleDateString()}</TableCell>
                     </TableRow>
-                  ))} */}
+                  ))}
                 </TableBody>
               </Table>
             </CardContent>
@@ -1485,27 +1526,63 @@ export default function AdminDashboard() {
                 <CardDescription>Configure trading parameters</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {settings.filter(s => s.category === 'trading').map((setting: any) => (
-                  <div key={setting.key} className="space-y-2">
-                    <label className="text-sm font-medium">{setting.description}</label>
-                    <div className="flex space-x-2">
-                      <Input
-                        defaultValue={setting.value}
-                        id={setting.key}
-                        className="flex-1"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          const input = document.getElementById(setting.key) as HTMLInputElement;
-                          updateSetting(setting.key, input.value);
-                        }}
-                      >
-                        Update
-                      </Button>
-                    </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Minimum Trading Amount</label>
+                  <div className="flex space-x-2">
+                    <Input
+                      defaultValue={systemSettings.trading?.trading_min_amount || '10.00'}
+                      id="trading_min_amount"
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById('trading_min_amount') as HTMLInputElement;
+                        updateSetting('trading_min_amount', input.value);
+                      }}
+                    >
+                      Update
+                    </Button>
                   </div>
-                ))}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Maximum Trading Amount</label>
+                  <div className="flex space-x-2">
+                    <Input
+                      defaultValue={systemSettings.trading?.trading_max_amount || '10000.00'}
+                      id="trading_max_amount"
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById('trading_max_amount') as HTMLInputElement;
+                        updateSetting('trading_max_amount', input.value);
+                      }}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Trading Fee Percentage</label>
+                  <div className="flex space-x-2">
+                    <Input
+                      defaultValue={systemSettings.trading?.trading_fee_percentage || '0.1'}
+                      id="trading_fee_percentage"
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById('trading_fee_percentage') as HTMLInputElement;
+                        updateSetting('trading_fee_percentage', input.value);
+                      }}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -1515,27 +1592,63 @@ export default function AdminDashboard() {
                 <CardDescription>Configure email notifications</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {settings.filter(s => s.category === 'email').map((setting: any) => (
-                  <div key={setting.key} className="space-y-2">
-                    <label className="text-sm font-medium">{setting.description}</label>
-                    <div className="flex space-x-2">
-                      <Input
-                        defaultValue={setting.value}
-                        id={setting.key}
-                        className="flex-1"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          const input = document.getElementById(setting.key) as HTMLInputElement;
-                          updateSetting(setting.key, input.value);
-                        }}
-                      >
-                        Update
-                      </Button>
-                    </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">SMTP Host</label>
+                  <div className="flex space-x-2">
+                    <Input
+                      defaultValue={systemSettings.email?.smtp_host || 'smtp.gmail.com'}
+                      id="smtp_host"
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById('smtp_host') as HTMLInputElement;
+                        updateSetting('smtp_host', input.value);
+                      }}
+                    >
+                      Update
+                    </Button>
                   </div>
-                ))}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">SMTP Port</label>
+                  <div className="flex space-x-2">
+                    <Input
+                      defaultValue={systemSettings.email?.smtp_port || '587'}
+                      id="smtp_port"
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById('smtp_port') as HTMLInputElement;
+                        updateSetting('smtp_port', input.value);
+                      }}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">From Email</label>
+                  <div className="flex space-x-2">
+                    <Input
+                      defaultValue={systemSettings.email?.from_email || 'noreply@elitestock.com'}
+                      id="from_email"
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById('from_email') as HTMLInputElement;
+                        updateSetting('from_email', input.value);
+                      }}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -1607,15 +1720,15 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Button className="w-full" variant="outline">
+                  <Button className="w-full" variant="outline" onClick={sendBulkEmail}>
                     <Mail className="w-4 h-4 mr-2" />
                     Send Bulk Email
                   </Button>
-                  <Button className="w-full" variant="outline">
+                  <Button className="w-full" variant="outline" onClick={() => exportData('users')}>
                     <Download className="w-4 h-4 mr-2" />
                     Export Reports
                   </Button>
-                  <Button className="w-full" variant="outline">
+                  <Button className="w-full" variant="outline" onClick={backupDatabase}>
                     <Settings className="w-4 h-4 mr-2" />
                     Backup Database
                   </Button>

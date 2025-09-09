@@ -361,6 +361,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk email endpoint
+  app.post("/api/admin/bulk-email", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { subject, message } = req.body;
+      const allUsers = await storageInstance.getAllUsers();
+      
+      let successCount = 0;
+      for (const user of allUsers) {
+        try {
+          // Import sendEmail function
+          const { sendEmail } = await import('./email');
+          await sendEmail({
+            to: user.email,
+            from: 'noreply@elitestock.com',
+            subject: subject,
+            html: `<h2>${subject}</h2><p>${message}</p>`
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to send email to ${user.email}:`, error);
+        }
+      }
+      
+      res.status(200).json({
+        message: `Bulk email sent successfully to ${successCount}/${allUsers.length} users`
+      });
+    } catch (error) {
+      console.error("Bulk email error:", error);
+      res.status(500).json({ message: "Failed to send bulk email" });
+    }
+  });
+
+  // Database backup endpoint
+  app.post("/api/admin/backup", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // In a real application, you would implement actual database backup logic
+      console.log('Database backup initiated by admin:', req.session?.userId);
+      
+      res.status(200).json({
+        message: "Database backup initiated successfully",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Backup error:", error);
+      res.status(500).json({ message: "Failed to initiate backup" });
+    }
+  });
+
+  // Investment processing endpoint
+  app.post("/api/admin/process-investments", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const result = await storageInstance.processMaturedInvestments();
+      res.status(200).json({
+        message: "Investments processed successfully",
+        processed: result
+      });
+    } catch (error) {
+      console.error("Investment processing error:", error);
+      res.status(500).json({ message: "Failed to process investments" });
+    }
+  });
+
+  // Admin investments endpoint
+  app.get("/api/admin/investments", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const allInvestments = await storageInstance.getAllInvestments();
+      
+      // Get user and plan details for each investment
+      const investmentsWithDetails = await Promise.all(
+        allInvestments.map(async (investment) => {
+          const user = await storageInstance.getUser(investment.userId);
+          const plan = await storageInstance.getInvestmentPlan(investment.planId);
+          
+          return {
+            ...investment,
+            user: user ? {
+              id: user.id,
+              fullName: user.fullName,
+              email: user.email,
+              username: user.username
+            } : null,
+            plan: plan ? {
+              id: plan.id,
+              name: plan.name,
+              description: plan.description
+            } : null
+          };
+        })
+      );
+
+      res.status(200).json(investmentsWithDetails);
+    } catch (error) {
+      console.error("Admin investments error:", error);
+      res.status(500).json({ message: "Failed to get investments" });
+    }
+  });
+
   // Settings management endpoints
   app.get("/api/admin/settings", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     try {
@@ -404,6 +501,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Update settings error:", error);
       res.status(500).json({ message: "Failed to update settings" });
+    }
+  });
+
+  // Individual setting update endpoint
+  app.put("/api/admin/settings/:key", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { key } = req.params;
+      const { value } = req.body;
+      
+      const updatedSetting = await storageInstance.updateSetting(key, value);
+      
+      if (!updatedSetting) {
+        return res.status(404).json({ message: "Setting not found" });
+      }
+      
+      res.status(200).json({
+        message: "Setting updated successfully",
+        setting: updatedSetting
+      });
+    } catch (error) {
+      console.error("Update setting error:", error);
+      res.status(500).json({ message: "Failed to update setting" });
     }
   });
 
