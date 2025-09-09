@@ -62,21 +62,33 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // Start market data service
-  const { marketDataService } = await import('./market-data');
-  marketDataService.startPeriodicUpdates();
-
-  // Start investment maturity processing (check every hour)
+  // Start market data service with 5-minute intervals for more live feel
+  console.log('Starting market data update...');
+  const { updateMarketData } = await import('./market-data');
   const storageInstance = await import('./storage');
   const storage = await storageInstance.storage;
+  await updateMarketData(storage);
+  const marketDataInterval = setInterval(async () => {
+    try {
+      await updateMarketData(storage);
+    } catch (error) {
+      console.error('Error during market data update:', error);
+    }
+  }, 5 * 60 * 1000); // 5 minutes
 
-  setInterval(async () => {
+  console.log('Market data service started with 5-minute update intervals');
+
+  // Start investment maturity processing service
+  console.log('Starting investment maturity processor...');
+  const investmentProcessInterval = setInterval(async () => {
     try {
       await storage.processMaturedInvestments();
     } catch (error) {
-      console.error('Error in investment processing scheduler:', error);
+      console.error('Error during investment processing:', error);
     }
-  }, 60 * 60 * 1000); // Every hour
+  }, 60 * 60 * 1000); // Check every hour
+
+  console.log('Investment maturity processor started with hourly intervals');
 
   // Process matured investments on startup
   setTimeout(async () => {

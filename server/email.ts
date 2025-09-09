@@ -1,4 +1,3 @@
-
 import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 
@@ -55,10 +54,10 @@ async function sendEmailWithSendGrid(params: EmailParams): Promise<boolean> {
       },
       subject: params.subject,
     };
-    
+
     if (params.text) emailData.text = params.text;
     if (params.html) emailData.html = params.html;
-    
+
     await mailService.send(emailData);
     console.log('Email sent successfully via SendGrid to:', params.to);
     return true;
@@ -68,12 +67,12 @@ async function sendEmailWithSendGrid(params: EmailParams): Promise<boolean> {
       code: error.code,
       response: error.response?.body
     });
-    
+
     // Log specific SendGrid errors for debugging
     if (error.code === 403) {
       console.error('SendGrid 403 Error: Check API key permissions and sender verification');
     }
-    
+
     return false;
   }
 }
@@ -127,13 +126,13 @@ export const emailTemplates = {
     text: `Welcome ${username}! Your account has been created successfully.`,
     html: `<h1>Welcome ${username}!</h1><p>Your account has been created successfully.</p>`
   }),
-  
+
   depositConfirmation: (amount: string, currency: string) => ({
     subject: 'Deposit Confirmation',
     text: `Your deposit of ${amount} ${currency} has been confirmed.`,
     html: `<h1>Deposit Confirmed</h1><p>Your deposit of <strong>${amount} ${currency}</strong> has been confirmed.</p>`
   }),
-  
+
   withdrawalRequest: (amount: string, currency: string) => ({
     subject: 'Withdrawal Request Received',
     text: `Your withdrawal request for ${amount} ${currency} has been received and is being processed.`,
@@ -146,3 +145,31 @@ export const emailTemplates = {
     html: `<h1>KYC Verification ${status === 'verified' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Update'}</h1><p>Your KYC verification status has been updated to: <strong>${status}</strong>.</p>${status === 'verified' ? '<p>You can now access all platform features.</p>' : status === 'rejected' ? '<p>Please resubmit your documents with correct information.</p>' : ''}`
   })
 };
+
+export async function sendTransactionEmail(userEmail: string, transaction: any) {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.log('SendGrid API key not configured - email not sent');
+    return;
+  }
+
+  try {
+    const msg = {
+      to: userEmail,
+      from: 'noreply@elitetrade.com',
+      subject: `Transaction ${transaction.type} - ${transaction.status}`,
+      html: `
+        <h2>Transaction Update</h2>
+        <p>Your ${transaction.type} of $${transaction.amount} is now ${transaction.status}.</p>
+        <p>Transaction ID: ${transaction.id}</p>
+        <p>Date: ${new Date(transaction.createdAt).toLocaleString()}</p>
+      `,
+    };
+
+    await sgMail.send(msg);
+    console.log('Transaction email sent successfully');
+  } catch (error) {
+    console.error('SendGrid email error:', error);
+    // Don't throw error - continue with transaction processing
+    console.log('Transaction email not sent - continuing with transaction');
+  }
+}
