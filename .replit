@@ -11,7 +11,7 @@ build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [workflows]
-runButton = "Run Application"
+runButton = "Start application"
 
 [[workflows.workflow]]
 name = "Project"
@@ -47,4 +47,3 @@ expertMode = true
 [[ports]]
 localPort = 5000
 externalPort = 80
-exposeLocalhost = true

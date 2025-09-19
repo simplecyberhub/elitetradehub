@@ -1,9 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import cors from 'cors'; // Import cors
+import cors from "cors"; // Import cors
 
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
@@ -11,14 +11,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Configure CORS to allow credentials
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? process.env.FRONTEND_URL || true
-    : true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-User-Id', 'X-User-Role']
-}));
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production"
+        ? process.env.FRONTEND_URL || true
+        : true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "X-User-Id",
+      "X-User-Role",
+    ],
+  }),
+);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -53,9 +62,9 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize database and seed data
   try {
-    const { seedDatabaseNew } = await import('./seed');
+    const { seedDatabaseNew } = await import("./seed");
     await seedDatabaseNew();
-    log('Database seeded successfully');
+    log("Database seeded successfully");
   } catch (error) {
     log(`Error seeding database: ${String(error)}`);
   }
@@ -63,42 +72,47 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
 
   // Start market data service with 5-minute intervals for more live feel
-  console.log('Starting market data update...');
-  const { updateMarketData } = await import('./market-data');
-  const storageInstance = await import('./storage');
+  console.log("Starting market data update...");
+  const { updateMarketData } = await import("./market-data");
+  const storageInstance = await import("./storage");
   const storage = await storageInstance.storage;
   await updateMarketData(storage);
-  const marketDataInterval = setInterval(async () => {
-    try {
-      await updateMarketData(storage);
-    } catch (error) {
-      console.error('Error during market data update:', error);
-    }
-  }, 5 * 60 * 1000); // 5 minutes
+  const marketDataInterval = setInterval(
+    async () => {
+      try {
+        await updateMarketData(storage);
+      } catch (error) {
+        console.error("Error during market data update:", error);
+      }
+    },
+    5 * 60 * 1000,
+  ); // 5 minutes
 
-  console.log('Market data service started with 5-minute update intervals');
+  console.log("Market data service started with 5-minute update intervals");
 
   // Start investment maturity processing service
-  console.log('Starting investment maturity processor...');
-  const investmentProcessInterval = setInterval(async () => {
-    try {
-      await storage.processMaturedInvestments();
-    } catch (error) {
-      console.error('Error during investment processing:', error);
-    }
-  }, 60 * 60 * 1000); // Check every hour
+  console.log("Starting investment maturity processor...");
+  const investmentProcessInterval = setInterval(
+    async () => {
+      try {
+        await storage.processMaturedInvestments();
+      } catch (error) {
+        console.error("Error during investment processing:", error);
+      }
+    },
+    60 * 60 * 1000,
+  ); // Check every hour
 
-  console.log('Investment maturity processor started with hourly intervals');
+  console.log("Investment maturity processor started with hourly intervals");
 
   // Process matured investments on startup
   setTimeout(async () => {
     try {
       await storage.processMaturedInvestments();
     } catch (error) {
-      console.error('Error in initial investment processing:', error);
+      console.error("Error in initial investment processing:", error);
     }
   }, 10000); // 10 seconds after startup
-
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -121,13 +135,16 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "127.0.0.1",
-    reusePort: false,
-  }, () => {
-    log(`serving on port ${port}`);
-    console.log(`Investment processing: Active`);
-    console.log(`Market data updates: Active`);
-  });
+  server.listen(
+    {
+      port,
+      host: "0.0.0.0",
+      reusePort: false,
+    },
+    () => {
+      log(`serving on port ${port}`);
+      console.log(`Investment processing: Active`);
+      console.log(`Market data updates: Active`);
+    },
+  );
 })();
