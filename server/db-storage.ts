@@ -672,6 +672,25 @@ export class DbStorage implements IStorage {
     return setting;
   }
 
+  async bulkUpdateUsers(userIds: number[], updateData: Partial<InsertUser>): Promise<number> {
+    try {
+      let affectedCount = 0;
+      for (const userId of userIds) {
+        const result = await this.db
+          .update(users)
+          .set(updateData)
+          .where(eq(users.id, userId));
+        if (result.rowCount > 0) {
+          affectedCount++;
+        }
+      }
+      return affectedCount;
+    } catch (error) {
+      console.error('Bulk update users error:', error);
+      return 0;
+    }
+  }
+
   // Admin stats
   async getAdminStats() {
     const totalUsers = await this.db.select().from(users);
