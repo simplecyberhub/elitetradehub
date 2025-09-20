@@ -154,10 +154,10 @@ export default function AdminDashboard() {
       ip_whitelist: '',
     },
     platform: {
-      platform_name: 'EliteStock Trading',
-      company_name: 'EliteStock Inc.',
+      platform_name: 'TFXC Trading',
+      company_name: 'TFXC Inc.',
       platform_description: 'Professional Trading Platform',
-      support_email: 'support@elitestock.com',
+      support_email: 'support@tfxc.com',
       phone_number: '+1 (555) 123-4567',
       address: '123 Trading Street, Financial District, NY 10001',
       website_url: 'https://elitestock.com',
@@ -384,7 +384,7 @@ export default function AdminDashboard() {
 
   const selectAllUsers = () => {
     const filteredUsers = getFilteredUsers();
-    const allSelected = filteredUsers.every(u => selectedUsers.includes(u.id));
+    const allSelected = filteredUsers.length > 0 && filteredUsers.every(u => selectedUsers.includes(u.id));
     if (allSelected) {
       setSelectedUsers([]);
     } else {
@@ -703,10 +703,10 @@ export default function AdminDashboard() {
         ip_whitelist: '',
       },
       platform: {
-        platform_name: 'EliteStock Trading',
-        company_name: 'EliteStock Inc.',
+        platform_name: 'TFXC Trading',
+        company_name: 'TFXC Inc.',
         platform_description: 'Professional Trading Platform',
-        support_email: 'support@elitestock.com',
+        support_email: 'support@tfxc.com',
         phone_number: '+1 (555) 123-4567',
         address: '123 Trading Street, Financial District, NY 10001',
         website_url: 'https://elitestock.com',
@@ -2562,7 +2562,7 @@ export default function AdminDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Platform Name</label>
                       <Input
-                        value={systemSettings.platform?.platform_name || 'EliteStock Trading'}
+                        value={systemSettings.platform?.platform_name || 'TFXC Trading'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
                           platform: { ...prev.platform, platform_name: e.target.value }
@@ -2573,7 +2573,7 @@ export default function AdminDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Company Name</label>
                       <Input
-                        value={systemSettings.platform?.company_name || 'EliteStock Inc.'}
+                        value={systemSettings.platform?.company_name || 'TFXC Inc.'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
                           platform: { ...prev.platform, company_name: e.target.value }
@@ -2598,7 +2598,7 @@ export default function AdminDashboard() {
                       <label className="text-sm font-medium">Support Email</label>
                       <Input
                         type="email"
-                        value={systemSettings.platform?.support_email || 'support@elitestock.com'}
+                        value={systemSettings.platform?.support_email || 'support@tfxc.com'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
                           platform: { ...prev.platform, support_email: e.target.value }
