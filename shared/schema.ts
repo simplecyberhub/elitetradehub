@@ -261,6 +261,28 @@ export const sessions = pgTable("session", {
   expire: timestamp("expire", { mode: 'date' }).notNull(),
 });
 
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // info, success, warning, error
+  read: boolean("read").default(false).notNull(),
+  actionUrl: text("action_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  read: true,
+  createdAt: true,
+});
+
 // Export types for settings
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
+
+// Export types for notifications
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;

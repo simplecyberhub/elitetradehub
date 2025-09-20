@@ -5,13 +5,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 import {
   users, assets, traders, copyRelationships, trades,
-  investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings,
+  investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings, notifications,
   type User, type InsertUser, type Asset, type InsertAsset,
   type Trader, type InsertTrader, type CopyRelationship, type InsertCopyRelationship,
   type Trade, type InsertTrade, type InvestmentPlan, type InsertInvestmentPlan,
   type Investment, type InsertInvestment, type Transaction, type InsertTransaction,
   type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem,
-  type Setting, type InsertSetting
+  type Setting, type InsertSetting, type Notification, type InsertNotification
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -33,7 +33,7 @@ export class DbStorage implements IStorage {
     this.db = drizzle(this.client, {
       schema: {
         users, assets, traders, copyRelationships, trades,
-        investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings
+        investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings, notifications
       }
     });
   }
@@ -756,5 +756,38 @@ export class DbStorage implements IStorage {
       totalInvestments: totalInvestments.length,
       pendingKyc: pendingKyc.length
     };
+  }
+
+  // Notification operations
+  async createNotification(data: InsertNotification): Promise<Notification> {
+    const [notification] = await this.db.insert(notifications).values(data).returning();
+    return notification;
+  }
+
+  async getNotificationsByUserId(userId: number): Promise<Notification[]> {
+    return await this.db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const result = await this.db.select().from(notifications).where(eq(notifications.id, id)).limit(1);
+    return result[0];
+  }
+
+  async updateNotification(id: number, data: Partial<Notification>): Promise<Notification | undefined> {
+    const result = await this.db.update(notifications).set(data).where(eq(notifications.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteNotification(id: number): Promise<boolean> {
+    const result = await this.db.delete(notifications).where(eq(notifications.id, id));
+    return result.rowCount > 0;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    await this.db.update(notifications)
+      .set({ read: true })
+      .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
   }
 }

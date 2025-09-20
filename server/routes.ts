@@ -15,6 +15,7 @@ import {
   insertKycDocumentSchema,
   insertWatchlistItemSchema,
   reviewTransactionSchema,
+  insertNotificationSchema,
 } from "@shared/schema";
 import {
   requireAuth,
@@ -1149,6 +1150,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Password change endpoint
+  app.post(
+    "/api/user/:id/change-password",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const userId = parseInt(req.params.id);
+
+        // Ensure user can only change their own password
+        if (req.session?.userId !== userId) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+          return res.status(400).json({ message: "Current password and new password are required" });
+        }
+
+        // Get current user
+        const user = await storageInstance.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Verify current password
+        const isValidPassword = await validatePassword(currentPassword, user.password);
+        if (!isValidPassword) {
+          return res.status(400).json({ message: "Current password is incorrect" });
+        }
+
+        // Hash new password
+        const hashedNewPassword = await hashPassword(newPassword);
+
+        // Update password
+        await storageInstance.updateUser(userId, { password: hashedNewPassword });
+
+        res.json({ message: "Password changed successfully" });
+      } catch (error) {
+        console.error("Password change error:", error);
+        res.status(500).json({ message: "Failed to change password" });
+      }
+    }
+  );
+
   // Asset routes
   app.get("/api/assets", async (req: Request, res: Response) => {
     try {
@@ -1949,6 +1995,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete watchlist item" });
     }
   });
+
+  // Notification routes
+  app.get(
+    "/api/user/:userId/notifications",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const userId = parseInt(req.params.userId);
+
+        // Ensure user can only access their own notifications
+        if (req.session?.userId !== userId) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+
+        const notifications = await storageInstance.getNotificationsByUserId(userId);
+        res.status(200).json(notifications);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to get notifications" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/notifications",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const validatedData = insertNotificationSchema.parse(req.body);
+        const newNotification = await storageInstance.createNotification(validatedData);
+        res.status(201).json(newNotification);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          res.status(400).json({ message: error.errors });
+        } else {
+          res.status(500).json({ message: "Failed to create notification" });
+        }
+      }
+    }
+  );
+
+  app.patch(
+    "/api/notifications/:id/read",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const notificationId = parseInt(req.params.id);
+        const notification = await storageInstance.getNotification(notificationId);
+
+        if (!notification) {
+          return res.status(404).json({ message: "Notification not found" });
+        }
+
+        // Ensure user can only mark their own notifications as read
+        if (req.session?.userId !== notification.userId) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+
+        const updatedNotification = await storageInstance.updateNotification(notificationId, { read: true });
+        res.status(200).json(updatedNotification);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to mark notification as read" });
+      }
+    }
+  );
+
+  app.patch(
+    "/api/user/:userId/notifications/mark-all-read",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const userId = parseInt(req.params.userId);
+
+        // Ensure user can only mark their own notifications as read
+        if (req.session?.userId !== userId) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+
+        await storageInstance.markAllNotificationsAsRead(userId);
+        res.status(200).json({ message: "All notifications marked as read" });
+      } catch (error) {
+        res.status(500).json({ message: "Failed to mark all notifications as read" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/notifications/:id",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const notificationId = parseInt(req.params.id);
+        const notification = await storageInstance.getNotification(notificationId);
+
+        if (!notification) {
+          return res.status(404).json({ message: "Notification not found" });
+        }
+
+        // Ensure user can only delete their own notifications
+        if (req.session?.userId !== notification.userId) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+
+        const result = await storageInstance.deleteNotification(notificationId);
+        if (!result) {
+          return res.status(404).json({ message: "Notification not found" });
+        }
+
+        res.status(204).send();
+      } catch (error) {
+        res.status(500).json({ message: "Failed to delete notification" });
+      }
+    }
+  );
 
   const httpServer = createServer(app);
   return httpServer;
