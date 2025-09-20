@@ -24,7 +24,12 @@ export class DbStorage implements IStorage {
       throw new Error("DATABASE_URL must be set");
     }
 
-    this.client = postgres(process.env.DATABASE_URL);
+    this.client = postgres(process.env.DATABASE_URL, {
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      connect_timeout: 10,
+      idle_timeout: 20,
+      max_lifetime: 60 * 30
+    });
     this.db = drizzle(this.client, {
       schema: {
         users, assets, traders, copyRelationships, trades,
