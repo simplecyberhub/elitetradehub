@@ -2125,7 +2125,7 @@ export default function AdminDashboard() {
       <p>Professional Trading Platform</p>
     </div>
     <div class="content">
-      <h2>Welcome {{username}}!</h2>
+      <h2>Welcome {{user.username}}!</h2>
       <p>Your account has been successfully created. You can now access all our trading features.</p>
       <a href="{{dashboard_url}}" class="btn">Access Dashboard</a>
     </div>
@@ -2802,8 +2802,7 @@ export default function AdminDashboard() {
 
       {/* KYC Document View Dialog */}
       <Dialog open={kycViewDialog} onOpenChange={setKycViewDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl">         <DialogHeader>
             <DialogTitle>KYC Document Details</DialogTitle>
             <DialogDescription>
               Review the submitted KYC document information
@@ -2814,7 +2813,7 @@ export default function AdminDashboard() {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground">User Information</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground">Account Information</h4>
                   <p><strong>User ID:</strong> {selectedKycDocument.userId}</p>
                   <p><strong>Full Name:</strong> {selectedKycDocument.user?.fullName || 'N/A'}</p>
                   <p><strong>Email:</strong> {selectedKycDocument.user?.email || 'N/A'}</p>
