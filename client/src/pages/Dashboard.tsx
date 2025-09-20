@@ -16,8 +16,8 @@ const Dashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Dashboard | EliteStock Trading Platform</title>
-        <meta name="description" content="View your trading portfolio, market overview, recent trades, and investment opportunities on EliteStock Trading Platform." />
+        <title>Dashboard | TFXC Trading Platform</title>
+        <meta name="description" content="View your trading portfolio, market overview, recent trades, and investment opportunities on TFXC Trading Platform." />
       </Helmet>
       
       <div>
