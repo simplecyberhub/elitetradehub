@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { useAuth } from "@/context/AuthContext";
 import ProfileForm from "@/components/forms/ProfileForm";
@@ -7,10 +7,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 const Profile = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  
+  // User preferences state
+  const [preferences, setPreferences] = useState({
+    emailNotifications: true,
+    smsAlerts: false,
+    priceAlerts: true,
+    tradingActivity: true,
+    darkMode: true,
+    displayCurrency: 'USD'
+  });
+  
+  const [loading, setLoading] = useState(false);
   
   // Get user initials for avatar
   const getInitials = (name: string) => {
@@ -19,6 +32,62 @@ const Profile = () => {
       .map((part) => part[0])
       .join("")
       .toUpperCase();
+  };
+
+  // Load user preferences on component mount
+  useEffect(() => {
+    if (user?.id) {
+      loadUserPreferences();
+    }
+  }, [user?.id]);
+
+  const loadUserPreferences = async () => {
+    try {
+      const response = await apiRequest("GET", `/api/user/${user?.id}/preferences`);
+      if (response.ok) {
+        const data = await response.json();
+        setPreferences(prev => ({ ...prev, ...data }));
+      }
+    } catch (error) {
+      console.log("No existing preferences found, using defaults");
+    }
+  };
+
+  const updatePreference = async (key: string, value: boolean | string) => {
+    try {
+      setLoading(true);
+      const newPreferences = { ...preferences, [key]: value };
+      setPreferences(newPreferences);
+
+      const response = await apiRequest("PATCH", `/api/user/${user?.id}/preferences`, {
+        [key]: value
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Settings Updated",
+          description: "Your preferences have been saved successfully.",
+        });
+      } else {
+        // Revert on error
+        setPreferences(preferences);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update preferences. Please try again.",
+        });
+      }
+    } catch (error) {
+      // Revert on error
+      setPreferences(preferences);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update preferences. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -153,8 +222,14 @@ const Profile = () => {
                         </div>
                         <div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <input 
+                              type="checkbox" 
+                              className="sr-only peer" 
+                              checked={preferences.emailNotifications}
+                              onChange={(e) => updatePreference('emailNotifications', e.target.checked)}
+                              disabled={loading}
+                            />
+                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-disabled:opacity-50"></div>
                           </label>
                         </div>
                       </div>
@@ -166,8 +241,14 @@ const Profile = () => {
                         </div>
                         <div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" />
-                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <input 
+                              type="checkbox" 
+                              className="sr-only peer" 
+                              checked={preferences.smsAlerts}
+                              onChange={(e) => updatePreference('smsAlerts', e.target.checked)}
+                              disabled={loading}
+                            />
+                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-disabled:opacity-50"></div>
                           </label>
                         </div>
                       </div>
@@ -179,8 +260,14 @@ const Profile = () => {
                         </div>
                         <div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <input 
+                              type="checkbox" 
+                              className="sr-only peer" 
+                              checked={preferences.priceAlerts}
+                              onChange={(e) => updatePreference('priceAlerts', e.target.checked)}
+                              disabled={loading}
+                            />
+                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-disabled:opacity-50"></div>
                           </label>
                         </div>
                       </div>
@@ -192,8 +279,14 @@ const Profile = () => {
                         </div>
                         <div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <input 
+                              type="checkbox" 
+                              className="sr-only peer" 
+                              checked={preferences.tradingActivity}
+                              onChange={(e) => updatePreference('tradingActivity', e.target.checked)}
+                              disabled={loading}
+                            />
+                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-disabled:opacity-50"></div>
                           </label>
                         </div>
                       </div>
@@ -213,8 +306,14 @@ const Profile = () => {
                         </div>
                         <div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <input 
+                              type="checkbox" 
+                              className="sr-only peer" 
+                              checked={preferences.darkMode}
+                              onChange={(e) => updatePreference('darkMode', e.target.checked)}
+                              disabled={loading}
+                            />
+                            <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-disabled:opacity-50"></div>
                           </label>
                         </div>
                       </div>
@@ -225,7 +324,12 @@ const Profile = () => {
                           <p className="text-sm text-neutral-400">Currency used for displaying prices</p>
                         </div>
                         <div>
-                          <select className="bg-neutral-800 border border-neutral-700 text-white rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary">
+                          <select 
+                            className="bg-neutral-800 border border-neutral-700 text-white rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                            value={preferences.displayCurrency}
+                            onChange={(e) => updatePreference('displayCurrency', e.target.value)}
+                            disabled={loading}
+                          >
                             <option value="USD">USD</option>
                             <option value="EUR">EUR</option>
                             <option value="GBP">GBP</option>

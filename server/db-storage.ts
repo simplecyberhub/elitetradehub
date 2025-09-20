@@ -691,6 +691,58 @@ export class DbStorage implements IStorage {
     }
   }
 
+  // User preferences operations
+  async getUserPreferences(userId: number): Promise<any | null> {
+    try {
+      const preferences = await this.db.select().from(settings)
+        .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, `user_${userId}`)));
+      
+      if (preferences.length > 0) {
+        return JSON.parse(preferences[0].value);
+      }
+      return null;
+    } catch (error) {
+      console.error('Get user preferences error:', error);
+      return null;
+    }
+  }
+
+  async updateUserPreferences(userId: number, preferences: any): Promise<any> {
+    try {
+      const key = `user_${userId}`;
+      const value = JSON.stringify(preferences);
+      
+      // Try to update existing preferences
+      const existing = await this.db.select().from(settings)
+        .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, key)));
+      
+      if (existing.length > 0) {
+        // Update existing
+        const currentPrefs = JSON.parse(existing[0].value);
+        const updatedPrefs = { ...currentPrefs, ...preferences };
+        
+        await this.db.update(settings)
+          .set({ value: JSON.stringify(updatedPrefs), updatedAt: new Date() })
+          .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, key)));
+        
+        return updatedPrefs;
+      } else {
+        // Create new preferences
+        const [newPref] = await this.db.insert(settings).values({
+          category: 'user_preferences',
+          key,
+          value,
+          description: `User preferences for user ${userId}`
+        }).returning();
+        
+        return JSON.parse(newPref.value);
+      }
+    } catch (error) {
+      console.error('Update user preferences error:', error);
+      throw error;
+    }
+  }
+
   // Admin stats
   async getAdminStats() {
     const totalUsers = await this.db.select().from(users);
