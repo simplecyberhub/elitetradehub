@@ -79,6 +79,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  app.post(
+    "/api/admin/users/bulk-action",
+    requireAuth,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const { userIds, action } = req.body;
+        
+        if (!Array.isArray(userIds) || userIds.length === 0) {
+          return res.status(400).json({ message: "No users selected" });
+        }
+
+        let updateData: any = {};
+        
+        switch (action) {
+          case 'suspend':
+            updateData = { kycStatus: 'suspended' };
+            break;
+          case 'unsuspend':
+            updateData = { kycStatus: 'verified' };
+            break;
+          case 'verify_kyc':
+            updateData = { kycStatus: 'verified' };
+            break;
+          case 'reset_kyc':
+            updateData = { kycStatus: 'unverified' };
+            break;
+          case 'send_email':
+            // Handle bulk email separately
+            for (const userId of userIds) {
+              const user = await storageInstance.getUser(userId);
+              if (user) {
+                // Send notification email
+                await sendWelcomeEmail(user.email, user.username);
+              }
+            }
+            return res.status(200).json({ message: "Bulk email sent successfully" });
+          default:
+            return res.status(400).json({ message: "Invalid action" });
+        }
+
+        // Update all selected users
+        for (const userId of userIds) {
+          await storageInstance.updateUser(userId, updateData);
+        }
+
+        res.status(200).json({ 
+          message: `Bulk action ${action} completed successfully`,
+          affectedUsers: userIds.length 
+        });
+      } catch (error) {
+        console.error("Bulk action error:", error);
+        res.status(500).json({ message: "Failed to perform bulk action" });
+      }
+    },
+  );
+
   app.patch(
     "/api/admin/users/:id",
     requireAuth,
@@ -143,6 +200,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(200).json(documents);
       } catch (error) {
         res.status(500).json({ message: "Failed to get KYC documents" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/admin/kyc-documents/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const docId = parseInt(req.params.id);
+        const document = await storageInstance.getKycDocument(docId);
+        
+        if (!document) {
+          return res.status(404).json({ message: "KYC document not found" });
+        }
+
+        const user = await storageInstance.getUser(document.userId);
+        const { password, ...userWithoutPassword } = user || {};
+
+        res.status(200).json({
+          ...document,
+          user: userWithoutPassword,
+        });
+      } catch (error) {
+        res.status(500).json({ message: "Failed to get KYC document" });
       }
     },
   );
@@ -659,12 +742,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const [key, value] of Object.entries(
             categorySettings as Record<string, string>,
           )) {
-            const updatedSetting = await storageInstance.updateSetting(
-              key,
-              value,
-            );
-            if (updatedSetting) {
-              updatedSettings.push(updatedSetting);
+            let setting = await storageInstance.updateSetting(key, value);
+            
+            if (!setting) {
+              // Create setting if it doesn't exist
+              setting = await storageInstance.createSetting({
+                category,
+                key,
+                value: value,
+                description: `${category} setting for ${key}`
+              });
+            }
+            
+            if (setting) {
+              updatedSettings.push(setting);
             }
           }
         }
