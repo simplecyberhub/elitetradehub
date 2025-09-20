@@ -1,7 +1,8 @@
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
-import { BellIcon, SearchIcon } from "@/components/ui/icons";
+import { SearchIcon } from "@/components/ui/icons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { NotificationDropdown } from "@/components/ui/notification-dropdown";
 import { Link } from "wouter";
 
 const Header = () => {
@@ -42,10 +43,7 @@ const Header = () => {
             </span>
           </div>
 
-          <button className="relative text-neutral-400 hover:text-white">
-            <BellIcon className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
-          </button>
+          <NotificationDropdown />
 
           <Link href="/profile" className="flex items-center gap-2 cursor-pointer hover:bg-neutral-700 p-1.5 rounded-md">
             <Avatar className="h-8 w-8 bg-primary">
