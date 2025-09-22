@@ -184,10 +184,8 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    if (user && user.role === 'admin') {
-      fetchAdminData();
-    }
-  }, [user]);
+    fetchAdminData();
+  }, []);
 
   const fetchAdminData = async () => {
     try {
@@ -197,8 +195,8 @@ export default function AdminDashboard() {
       const safeFetch = async (url: string, setter: (data: any) => void, fallback: any = []) => {
         try {
           const response = await apiRequest("GET", url, undefined, {
-            'X-User-Id': user?.id?.toString() || '0',
-            'X-User-Role': user?.role || 'user'
+            'X-User-Id': user.id.toString(),
+            'X-User-Role': user.role
           });
 
           if (response.ok) {
@@ -213,13 +211,6 @@ export default function AdminDashboard() {
           setter(fallback);
         }
       };
-
-      // Ensure user is available before proceeding
-      if (!user || !user.id) {
-        console.error("User not available for admin data fetch");
-        setLoading(false);
-        return;
-      }
 
       // Fetch all data in parallel
       await Promise.all([
@@ -251,15 +242,6 @@ export default function AdminDashboard() {
 
   const updateUserRole = async (userId: number, newRole: string) => {
     try {
-      if (!user?.id) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Authentication required"
-        });
-        return;
-      }
-
       await apiRequest("PATCH", `/api/admin/users/${userId}`, { role: newRole }, {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
@@ -282,15 +264,6 @@ export default function AdminDashboard() {
 
   const updateKycStatus = async (docId: number, status: string, rejectionReason?: string) => {
     try {
-      if (!user?.id) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Authentication required"
-        });
-        return;
-      }
-
       await apiRequest("PATCH", `/api/admin/kyc-documents/${docId}`, {
         verificationStatus: status,
         rejectionReason
@@ -325,15 +298,6 @@ export default function AdminDashboard() {
 
   const updateUserBalance = async (userId: number, amount: string, type: string) => {
     try {
-      if (!user?.id) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Authentication required"
-        });
-        return;
-      }
-
       await apiRequest("PATCH", `/api/admin/users/${userId}`, {
         balanceAdjustment: { amount: parseFloat(amount), type }
       }, {
