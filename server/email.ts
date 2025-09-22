@@ -164,7 +164,7 @@ export const emailTemplates = {
             <a href="${dashboardUrl}" class="btn">Access Your Dashboard</a>
           </div>
           <div class="footer">
-            <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
+            <p>&copy; 2025 TFXC Trading. All rights reserved.</p>
             <p>This email was sent to you because you created an account with us.</p>
           </div>
         </div>
@@ -259,7 +259,7 @@ export const emailTemplates = {
               </div>
             </div>
             <div class="footer">
-              <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
+              <p>&copy; 2025 TFXC Trading. All rights reserved.</p>
             </div>
           </div>
         </body>
