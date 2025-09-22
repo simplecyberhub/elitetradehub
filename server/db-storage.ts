@@ -11,7 +11,7 @@ import {
   type Trade, type InsertTrade, type InvestmentPlan, type InsertInvestmentPlan,
   type Investment, type InsertInvestment, type Transaction, type InsertTransaction,
   type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem,
-  type Setting, type InsertSetting, type Notification, type InsertNotification
+  type Setting, type InsertSetting, type Notification, type InsertNotification as NewNotification
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -696,7 +696,7 @@ export class DbStorage implements IStorage {
     try {
       const preferences = await this.db.select().from(settings)
         .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, `user_${userId}`)));
-      
+
       if (preferences.length > 0) {
         return JSON.parse(preferences[0].value);
       }
@@ -711,20 +711,20 @@ export class DbStorage implements IStorage {
     try {
       const key = `user_${userId}`;
       const value = JSON.stringify(preferences);
-      
+
       // Try to update existing preferences
       const existing = await this.db.select().from(settings)
         .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, key)));
-      
+
       if (existing.length > 0) {
         // Update existing
         const currentPrefs = JSON.parse(existing[0].value);
         const updatedPrefs = { ...currentPrefs, ...preferences };
-        
+
         await this.db.update(settings)
           .set({ value: JSON.stringify(updatedPrefs), updatedAt: new Date() })
           .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, key)));
-        
+
         return updatedPrefs;
       } else {
         // Create new preferences
@@ -734,7 +734,7 @@ export class DbStorage implements IStorage {
           value,
           description: `User preferences for user ${userId}`
         }).returning();
-        
+
         return JSON.parse(newPref.value);
       }
     } catch (error) {
@@ -759,15 +759,30 @@ export class DbStorage implements IStorage {
   }
 
   // Notification operations
-  async createNotification(data: InsertNotification): Promise<Notification> {
-    const [notification] = await this.db.insert(notifications).values(data).returning();
-    return notification;
+  async createNotification(notification: NewNotification): Promise<Notification> {
+    try {
+      const [newNotification] = await this.db
+        .insert(notifications)
+        .values(notification)
+        .returning();
+      return newNotification;
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw error;
+    }
   }
 
   async getNotificationsByUserId(userId: number): Promise<Notification[]> {
-    return await this.db.select().from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt));
+    try {
+      return await this.db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      return [];
+    }
   }
 
   async getNotification(id: number): Promise<Notification | undefined> {
