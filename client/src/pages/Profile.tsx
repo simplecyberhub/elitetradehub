@@ -8,13 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { User, Settings, Shield, Bell, Eye, EyeOff, Smartphone, LogOut, Calendar, MapPin, Monitor } from "lucide-react";
+import { User, Settings, Shield, Bell, Eye, EyeOff } from "lucide-react";
 
 interface UserPreferences {
   emailNotifications: boolean;
@@ -23,21 +20,6 @@ interface UserPreferences {
   tradingActivity: boolean;
   darkMode: boolean;
   displayCurrency: string;
-}
-
-interface ActiveSession {
-  id: string;
-  deviceInfo: string;
-  location: string;
-  lastActive: string;
-  current: boolean;
-}
-
-interface SecuritySettings {
-  twoFactorEnabled: boolean;
-  twoFactorMethod: 'app' | 'sms' | 'email';
-  loginNotifications: boolean;
-  sessionTimeout: number;
 }
 
 export default function Profile() {
@@ -78,30 +60,7 @@ export default function Profile() {
     profile: false,
     password: false,
     preferences: false,
-    security: false,
-    sessions: false,
   });
-
-  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
-    twoFactorEnabled: false,
-    twoFactorMethod: 'app',
-    loginNotifications: true,
-    sessionTimeout: 60,
-  });
-
-  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([
-    {
-      id: 'current',
-      deviceInfo: 'Chrome on Windows',
-      location: 'New York, US',
-      lastActive: 'Current session',
-      current: true,
-    },
-  ]);
-
-  const [show2FASetup, setShow2FASetup] = useState(false);
-  const [qrCode, setQrCode] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
 
   // Load user preferences on mount
   useEffect(() => {
@@ -262,167 +221,6 @@ export default function Profile() {
     }));
   };
 
-  const handleSecurityUpdate = async (newSettings: Partial<SecuritySettings>) => {
-    if (!user?.id) return;
-
-    const updatedSettings = { ...securitySettings, ...newSettings };
-    setSecuritySettings(updatedSettings);
-
-    setLoading(prev => ({ ...prev, security: true }));
-
-    try {
-      const response = await apiRequest("PATCH", `/api/user/${user.id}/security`, updatedSettings);
-      
-      if (response.ok) {
-        toast({
-          title: "Security Settings Updated",
-          description: "Your security preferences have been saved successfully.",
-        });
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update security settings");
-      }
-    } catch (error) {
-      console.error("Security update error:", error);
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: error instanceof Error ? error.message : "Failed to update security settings",
-      });
-      // Revert changes on error
-      setSecuritySettings(securitySettings);
-    } finally {
-      setLoading(prev => ({ ...prev, security: false }));
-    }
-  };
-
-  const enable2FA = async () => {
-    try {
-      setLoading(prev => ({ ...prev, security: true }));
-      
-      const response = await apiRequest("POST", `/api/user/${user?.id}/2fa/setup`);
-      if (response.ok) {
-        const data = await response.json();
-        setQrCode(data.qrCode);
-        setShow2FASetup(true);
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Setup Failed",
-        description: "Failed to setup 2FA. Please try again.",
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, security: false }));
-    }
-  };
-
-  const verify2FA = async () => {
-    try {
-      setLoading(prev => ({ ...prev, security: true }));
-      
-      const response = await apiRequest("POST", `/api/user/${user?.id}/2fa/verify`, {
-        code: verificationCode
-      });
-      
-      if (response.ok) {
-        setSecuritySettings(prev => ({ ...prev, twoFactorEnabled: true }));
-        setShow2FASetup(false);
-        setVerificationCode('');
-        toast({
-          title: "2FA Enabled",
-          description: "Two-factor authentication has been successfully enabled.",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Verification Failed",
-          description: "Invalid verification code. Please try again.",
-        });
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Verification Failed",
-        description: "Failed to verify code. Please try again.",
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, security: false }));
-    }
-  };
-
-  const disable2FA = async () => {
-    try {
-      setLoading(prev => ({ ...prev, security: true }));
-      
-      const response = await apiRequest("POST", `/api/user/${user?.id}/2fa/disable`);
-      if (response.ok) {
-        setSecuritySettings(prev => ({ ...prev, twoFactorEnabled: false }));
-        toast({
-          title: "2FA Disabled",
-          description: "Two-factor authentication has been disabled.",
-        });
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Disable Failed",
-        description: "Failed to disable 2FA. Please try again.",
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, security: false }));
-    }
-  };
-
-  const logoutSession = async (sessionId: string) => {
-    try {
-      setLoading(prev => ({ ...prev, sessions: true }));
-      
-      if (sessionId === 'current') {
-        // Logout current session
-        await logout();
-        return;
-      }
-      
-      const response = await apiRequest("DELETE", `/api/user/${user?.id}/sessions/${sessionId}`);
-      if (response.ok) {
-        setActiveSessions(prev => prev.filter(session => session.id !== sessionId));
-        toast({
-          title: "Session Terminated",
-          description: "The session has been successfully logged out.",
-        });
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Logout Failed",
-        description: "Failed to logout session. Please try again.",
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, sessions: false }));
-    }
-  };
-
-  const logoutAllSessions = async () => {
-    try {
-      setLoading(prev => ({ ...prev, sessions: true }));
-      
-      const response = await apiRequest("DELETE", `/api/user/${user?.id}/sessions`);
-      if (response.ok) {
-        // This will logout all sessions including current one
-        await logout();
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Logout Failed",
-        description: "Failed to logout all sessions. Please try again.",
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, sessions: false }));
-    }
-  };
-
   if (!user) {
     return (
       <div className="container mx-auto py-8">
@@ -441,10 +239,9 @@ export default function Profile() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">Profile Information</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
 
@@ -530,247 +327,82 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="security">
-          <div className="space-y-6">
-            {/* Password Change Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5" />
-                  <span>Password Security</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handlePasswordChange} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="currentPassword"
-                        type={showPasswords.current ? "text" : "password"}
-                        value={passwordData.currentPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                        placeholder="Enter current password"
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('current')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                      >
-                        {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="newPassword"
-                        type={showPasswords.new ? "text" : "password"}
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                        placeholder="Enter new password"
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('new')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                      >
-                        {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="confirmPassword"
-                        type={showPasswords.confirm ? "text" : "password"}
-                        value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        placeholder="Confirm new password"
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('confirm')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                      >
-                        {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button type="submit" disabled={loading.password}>
-                    {loading.password ? "Changing Password..." : "Change Password"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Two-Factor Authentication Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Smartphone className="h-5 w-5" />
-                  <span>Two-Factor Authentication</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Enable 2FA</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Add an extra layer of security to your account
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={securitySettings.twoFactorEnabled ? 'default' : 'secondary'}>
-                      {securitySettings.twoFactorEnabled ? 'Enabled' : 'Disabled'}
-                    </Badge>
-                    {securitySettings.twoFactorEnabled ? (
-                      <Button variant="destructive" size="sm" onClick={disable2FA} disabled={loading.security}>
-                        Disable
-                      </Button>
-                    ) : (
-                      <Button size="sm" onClick={enable2FA} disabled={loading.security}>
-                        Enable
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {securitySettings.twoFactorEnabled && (
-                  <div className="space-y-4 border-t pt-4">
-                    <div className="space-y-2">
-                      <Label>2FA Method</Label>
-                      <Select
-                        value={securitySettings.twoFactorMethod}
-                        onValueChange={(value: 'app' | 'sms' | 'email') => 
-                          handleSecurityUpdate({ twoFactorMethod: value })
-                        }
-                        disabled={loading.security}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="app">Authenticator App</SelectItem>
-                          <SelectItem value="sms">SMS</SelectItem>
-                          <SelectItem value="email">Email</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Login Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified when someone logs into your account
-                    </p>
-                  </div>
-                  <Switch
-                    checked={securitySettings.loginNotifications}
-                    onCheckedChange={(checked) => handleSecurityUpdate({ loginNotifications: checked })}
-                    disabled={loading.security}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Session Timeout (minutes)</Label>
-                  <Select
-                    value={securitySettings.sessionTimeout.toString()}
-                    onValueChange={(value) => handleSecurityUpdate({ sessionTimeout: parseInt(value) })}
-                    disabled={loading.security}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="240">4 hours</SelectItem>
-                      <SelectItem value="480">8 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="sessions">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Monitor className="h-5 w-5" />
-                  <span>Active Sessions</span>
-                </div>
-                <Button variant="destructive" size="sm" onClick={logoutAllSessions} disabled={loading.sessions}>
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Logout All
-                </Button>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="h-5 w-5" />
+                <span>Security Settings</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Device</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Last Active</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeSessions.map((session) => (
-                    <TableRow key={session.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Monitor className="h-4 w-4" />
-                          <span>{session.deviceInfo}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="h-4 w-4" />
-                          <span>{session.location}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4" />
-                          <span>{session.lastActive}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={session.current ? 'default' : 'secondary'}>
-                          {session.current ? 'Current' : 'Active'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => logoutSession(session.id)}
-                          disabled={loading.sessions}
-                        >
-                          <LogOut className="h-4 w-4 mr-1" />
-                          {session.current ? 'Logout' : 'Terminate'}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showPasswords.current ? "text" : "password"}
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      placeholder="Enter current password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('current')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showPasswords.new ? "text" : "password"}
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder="Enter new password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('new')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showPasswords.confirm ? "text" : "password"}
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder="Confirm new password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('confirm')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={loading.password}>
+                  {loading.password ? "Changing Password..." : "Change Password"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -889,53 +521,6 @@ export default function Profile() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* 2FA Setup Dialog */}
-      <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Setup Two-Factor Authentication</DialogTitle>
-            <DialogDescription>
-              Scan the QR code with your authenticator app and enter the verification code.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center">
-                {qrCode ? (
-                  <img src={qrCode} alt="QR Code" className="w-full h-full" />
-                ) : (
-                  <p className="text-sm text-muted-foreground">Loading QR Code...</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="verificationCode">Verification Code</Label>
-              <Input
-                id="verificationCode"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                placeholder="Enter 6-digit code"
-                maxLength={6}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShow2FASetup(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={verify2FA} 
-              disabled={loading.security || verificationCode.length !== 6}
-            >
-              {loading.security ? "Verifying..." : "Verify & Enable"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
