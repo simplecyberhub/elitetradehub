@@ -1,4 +1,4 @@
-import { Switch, Route, Router } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,7 +18,6 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAuth, AuthProvider } from "./context/AuthContext";
-import { NotificationProvider } from "./context/NotificationContext";
 import { lazy, Suspense, useState } from 'react';
 
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
@@ -47,7 +46,7 @@ function LoginForm() {
   return (
     <div className="w-full max-w-md mx-auto bg-neutral-800 rounded-lg p-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">📈 TFXC</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">📈 EliteStock</h2>
         <p className="text-neutral-400">
           {isRegistering ? "Create your account" : "Log in to your account"}
         </p>
@@ -252,14 +251,12 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <AppContent />
-            <Toaster />
-          </TooltipProvider>
-        </QueryClientProvider>
-      </NotificationProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AppContent />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
     </AuthProvider>
   );
 }

@@ -9,8 +9,8 @@ const KycVerification = () => {
   return (
     <>
       <Helmet>
-        <title>KYC Verification | TFXC Trading Platform</title>
-        <meta name="description" content="Complete your identity verification to unlock all features of the TFXC Trading Platform." />
+        <title>KYC Verification | EliteStock Trading Platform</title>
+        <meta name="description" content="Complete your identity verification to unlock all features of the EliteStock Trading Platform." />
       </Helmet>
       
       <div>

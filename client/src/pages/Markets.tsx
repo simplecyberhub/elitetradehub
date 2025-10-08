@@ -45,8 +45,8 @@ const Markets = () => {
   return (
     <>
       <Helmet>
-        <title>Markets | TFXC Trading Platform</title>
-        <meta name="description" content="Explore stock, cryptocurrency, and forex markets. View real-time prices, trends, and charts on TFXC Trading Platform." />
+        <title>Markets | EliteStock Trading Platform</title>
+        <meta name="description" content="Explore stock, cryptocurrency, and forex markets. View real-time prices, trends, and charts on EliteStock Trading Platform." />
       </Helmet>
       
       <div>

@@ -143,28 +143,6 @@ export default function AdminDashboard() {
       smtp_host: 'smtp.gmail.com',
       smtp_port: '587',
       from_email: 'noreply@elitestock.com'
-    },
-    security: {
-      require_2fa: 'disabled',
-      session_timeout: '60',
-      password_policy: 'standard',
-      max_login_attempts: '5',
-      api_rate_limit: '100',
-      api_logging: 'enabled',
-      ip_whitelist: '',
-    },
-    platform: {
-      platform_name: 'TFXC Trading',
-      company_name: 'TFXC Inc.',
-      platform_description: 'Professional Trading Platform',
-      support_email: 'support@tfxc.com',
-      phone_number: '+1 (555) 123-4567',
-      address: '123 Trading Street, Financial District, NY 10001',
-      website_url: 'https://elitestock.com',
-      license_number: 'FIN-2024-001',
-      regulatory_authority: 'SEC',
-      terms_url: 'https://elitestock.com/terms',
-      privacy_url: 'https://elitestock.com/privacy',
     }
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -384,7 +362,7 @@ export default function AdminDashboard() {
 
   const selectAllUsers = () => {
     const filteredUsers = getFilteredUsers();
-    const allSelected = filteredUsers.length > 0 && filteredUsers.every(u => selectedUsers.includes(u.id));
+    const allSelected = filteredUsers.every(u => selectedUsers.includes(u.id));
     if (allSelected) {
       setSelectedUsers([]);
     } else {
@@ -427,12 +405,12 @@ export default function AdminDashboard() {
         (userFilter === 'suspended' && u.suspended) ||
         (userFilter === 'unverified' && u.kycStatus === 'unverified') ||
         (userFilter === 'verified' && u.kycStatus === 'verified');
-
+      
       const matchesSearch = !searchUser || 
         u.username.toLowerCase().includes(searchUser.toLowerCase()) ||
         u.email.toLowerCase().includes(searchUser.toLowerCase()) ||
         u.fullName.toLowerCase().includes(searchUser.toLowerCase());
-
+      
       return matchesFilter && matchesSearch;
     });
   };
@@ -692,28 +670,6 @@ export default function AdminDashboard() {
         smtp_host: 'smtp.gmail.com',
         smtp_port: '587',
         from_email: 'noreply@elitestock.com'
-      },
-      security: {
-        require_2fa: 'disabled',
-        session_timeout: '60',
-        password_policy: 'standard',
-        max_login_attempts: '5',
-        api_rate_limit: '100',
-        api_logging: 'enabled',
-        ip_whitelist: '',
-      },
-      platform: {
-        platform_name: 'TFXC Trading',
-        company_name: 'TFXC Inc.',
-        platform_description: 'Professional Trading Platform',
-        support_email: 'support@tfxc.com',
-        phone_number: '+1 (555) 123-4567',
-        address: '123 Trading Street, Financial District, NY 10001',
-        website_url: 'https://elitestock.com',
-        license_number: 'FIN-2024-001',
-        regulatory_authority: 'SEC',
-        terms_url: 'https://elitestock.com/terms',
-        privacy_url: 'https://elitestock.com/privacy',
       }
     });
 
@@ -1065,7 +1021,7 @@ export default function AdminDashboard() {
                                       <p><strong>Payment Method:</strong> {transaction.method || 'Not specified'}</p>
                                       <p><strong>Transaction Reference:</strong> {transaction.transactionRef || transaction.id}</p>
                                     </div>
-
+                                    
                                     {/* Payment Proof Section */}
                                     {(transaction.paymentProof || transaction.paymentProofUrl) && (
                                       <div className="border rounded-lg p-3 bg-muted/30">
@@ -1091,7 +1047,7 @@ export default function AdminDashboard() {
                                         </div>
                                       </div>
                                     )}
-
+                                    
                                     {/* Payment Notes */}
                                     {transaction.paymentNotes && (
                                       <div className="border rounded-lg p-3 bg-muted/30">
@@ -1099,7 +1055,7 @@ export default function AdminDashboard() {
                                         <p className="text-sm">{transaction.paymentNotes}</p>
                                       </div>
                                     )}
-
+                                    
                                     {/* Withdrawal Address */}
                                     {transaction.withdrawalAddress && (
                                       <div className="border rounded-lg p-3 bg-muted/30">
@@ -1107,7 +1063,7 @@ export default function AdminDashboard() {
                                         <p className="text-sm font-mono bg-background p-2 rounded border">{transaction.withdrawalAddress}</p>
                                       </div>
                                     )}
-
+                                    
                                     {/* Additional Transaction Details */}
                                     {transaction.withdrawalDetails && (
                                       <div className="border rounded-lg p-3 bg-muted/30">
@@ -1119,7 +1075,7 @@ export default function AdminDashboard() {
                                         </pre>
                                       </div>
                                     )}
-
+                                    
                                     {/* If no payment details available */}
                                     {!transaction.paymentProof && !transaction.paymentProofUrl && !transaction.paymentNotes && !transaction.withdrawalAddress && (
                                       <div className="border rounded-lg p-3 bg-yellow-50 border-yellow-200">
@@ -1281,56 +1237,56 @@ export default function AdminDashboard() {
                           <Button size="sm" variant="outline" onClick={() => viewUserDetails(user)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline" onClick={() => setSelectedUser(user)}>
-                                <DollarSign className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Adjust Balance - {user.fullName}</DialogTitle>
-                                <DialogDescription>
-                                  Current balance: ${user.balance}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label htmlFor="amount">Amount</Label>
-                                  <Input
-                                    type="number"
-                                    value={balanceUpdate.amount}
-                                    onChange={(e) => setBalanceUpdate(prev => ({ ...prev, amount: e.target.value }))}
-                                    placeholder="Enter amount"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="type">Action</Label>
-                                  <Select value={balanceUpdate.type} onValueChange={(value) =>
-                                    setBalanceUpdate(prev => ({ ...prev, type: value }))
-                                  }>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="add">Add to Balance</SelectItem>
-                                      <SelectItem value="subtract">Subtract from Balance</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button
-                                  onClick={() => updateUserBalance(user.id, balanceUpdate.amount, balanceUpdate.type)}
-                                  disabled={!balanceUpdate.amount}
-                                >
-                                  Update Balance
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
                           {user.role !== 'admin' && (
                             <>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline" onClick={() => setSelectedUser(user)}>
+                                    <DollarSign className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Adjust Balance - {user.fullName}</DialogTitle>
+                                    <DialogDescription>
+                                      Current balance: ${user.balance}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="amount">Amount</Label>
+                                      <Input
+                                        type="number"
+                                        value={balanceUpdate.amount}
+                                        onChange={(e) => setBalanceUpdate(prev => ({ ...prev, amount: e.target.value }))}
+                                        placeholder="Enter amount"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="type">Action</Label>
+                                      <Select value={balanceUpdate.type} onValueChange={(value) =>
+                                        setBalanceUpdate(prev => ({ ...prev, type: value }))
+                                      }>
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="add">Add to Balance</SelectItem>
+                                          <SelectItem value="subtract">Subtract from Balance</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button
+                                      onClick={() => updateUserBalance(user.id, balanceUpdate.amount, balanceUpdate.type)}
+                                      disabled={!balanceUpdate.amount}
+                                    >
+                                      Update Balance
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1859,13 +1815,12 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs defaultValue="trading" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="trading">Trading</TabsTrigger>
               <TabsTrigger value="email">Email</TabsTrigger>
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="copytrading">Copy Trading</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
-              <TabsTrigger value="platform">Platform</TabsTrigger>
             </TabsList>
 
             <TabsContent value="trading" className="space-y-4">
@@ -2125,7 +2080,7 @@ export default function AdminDashboard() {
       <p>Professional Trading Platform</p>
     </div>
     <div class="content">
-      <h2>Welcome {{user.username}}!</h2>
+      <h2>Welcome {{username}}!</h2>
       <p>Your account has been successfully created. You can now access all our trading features.</p>
       <a href="{{dashboard_url}}" class="btn">Access Dashboard</a>
     </div>
@@ -2262,61 +2217,6 @@ export default function AdminDashboard() {
                           <p className="text-xs text-muted-foreground">Available variables: {{status}}, {{status_message}}</p>
                         </div>
                       </TabsContent>
-
-                      <TabsContent value="password" className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Password Reset Subject</label>
-                          <Input
-                            value={systemSettings.templates?.password_subject || 'Password Reset Request'}
-                            onChange={(e) => setSystemSettings(prev => ({
-                              ...prev,
-                              templates: { ...prev.templates, password_subject: e.target.value }
-                            }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Password Reset Content</label>
-                          <textarea
-                            className="w-full h-48 p-4 bg-white border-2 border-primary/30 rounded-lg text-gray-900 font-mono text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                            placeholder="Enter HTML email template..."
-                            value={systemSettings.templates?.password_content || `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-    .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 30px; text-align: center; }
-    .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-    .content { padding: 30px; background: white; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; }
-    .btn { background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <div class="logo">EliteStock Trading</div>
-      <p>Password Reset Request</p>
-    </div>
-    <div class="content">
-      <h2>Password Reset</h2>
-      <p>We received a request to reset your password. Click the button below to set a new password:</p>
-      <a href="{{reset_url}}" class="btn">Reset Password</a>
-      <p>If you did not request this, please ignore this email.</p>
-    </div>
-    <div class="footer">
-      <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`}
-                            onChange={(e) => setSystemSettings(prev => ({
-                              ...prev,
-                              templates: { ...prev.templates, password_content: e.target.value }
-                            }))}
-                          />
-                          <p className="text-xs text-muted-foreground">Available variables: {{reset_url}}</p>
-                        </div>
-                      </TabsContent>
                     </Tabs>
                   </CardContent>
                 </Card>
@@ -2435,28 +2335,10 @@ export default function AdminDashboard() {
               <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Platform Security</CardTitle>
-                    <CardDescription>Configure platform security settings</CardDescription>
+                    <CardTitle>Security Settings</CardTitle>
+                    <CardDescription>Configure platform security parameters</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Two-Factor Authentication Required</label>
-                      <Select
-                        value={systemSettings.security?.require_2fa || 'disabled'}
-                        onValueChange={(value) => setSystemSettings(prev => ({
-                          ...prev,
-                          security: { ...prev.security, require_2fa: value }
-                        }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="enabled">Required</SelectItem>
-                          <SelectItem value="disabled">Optional</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Session Timeout (minutes)</label>
                       <Input
@@ -2468,28 +2350,8 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Password Policy</label>
-                      <Select
-                        value={systemSettings.security?.password_policy || 'standard'}
-                        onValueChange={(value) => setSystemSettings(prev => ({
-                          ...prev,
-                          security: { ...prev.security, password_policy: value }
-                        }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="strong">Strong</SelectItem>
-                          <SelectItem value="enterprise">Enterprise</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Failed Login Attempts</label>
+                      <label className="text-sm font-medium">Max Login Attempts</label>
                       <Input
-                        type="number"
                         value={systemSettings.security?.max_login_attempts || '5'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
@@ -2497,19 +2359,46 @@ export default function AdminDashboard() {
                         }))}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Account Lockout Duration (minutes)</label>
+                      <Input
+                        value={systemSettings.security?.lockout_duration || '30'}
+                        onChange={(e) => setSystemSettings(prev => ({
+                          ...prev,
+                          security: { ...prev.security, lockout_duration: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Require KYC for Trading</label>
+                      <Select
+                        value={systemSettings.security?.require_kyc || 'enabled'}
+                        onValueChange={(value) => setSystemSettings(prev => ({
+                          ...prev,
+                          security: { ...prev.security, require_kyc: value }
+                        }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="enabled">Enabled</SelectItem>
+                          <SelectItem value="disabled">Disabled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>API Security</CardTitle>
+                    <CardTitle>API & Rate Limiting</CardTitle>
                     <CardDescription>Configure API access and rate limiting</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">API Rate Limit (requests/minute)</label>
                       <Input
-                        type="number"
                         value={systemSettings.security?.api_rate_limit || '100'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
@@ -2518,12 +2407,12 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Enable API Access Logging</label>
+                      <label className="text-sm font-medium">Enable API Access</label>
                       <Select
-                        value={systemSettings.security?.api_logging || 'enabled'}
+                        value={systemSettings.security?.api_enabled || 'enabled'}
                         onValueChange={(value) => setSystemSettings(prev => ({
                           ...prev,
-                          security: { ...prev.security, api_logging: value }
+                          security: { ...prev.security, api_enabled: value }
                         }))}
                       >
                         <SelectTrigger>
@@ -2536,177 +2425,22 @@ export default function AdminDashboard() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">IP Whitelist</label>
-                      <Input
-                        value={systemSettings.security?.ip_whitelist || ''}
-                        onChange={(e) => setSystemSettings(prev => ({
+                      <label className="text-sm font-medium">Maintenance Mode</label>
+                      <Select
+                        value={systemSettings.security?.maintenance_mode || 'disabled'}
+                        onValueChange={(value) => setSystemSettings(prev => ({
                           ...prev,
-                          security: { ...prev.security, ip_whitelist: e.target.value }
+                          security: { ...prev.security, maintenance_mode: value }
                         }))}
-                        placeholder="Enter IP addresses separated by commas"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="platform" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Platform Information</CardTitle>
-                    <CardDescription>Configure platform name and company details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Platform Name</label>
-                      <Input
-                        value={systemSettings.platform?.platform_name || 'TFXC Trading'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, platform_name: e.target.value }
-                        }))}
-                        placeholder="Enter platform name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Company Name</label>
-                      <Input
-                        value={systemSettings.platform?.company_name || 'TFXC Inc.'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, company_name: e.target.value }
-                        }))}
-                        placeholder="Enter company name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Platform Description</label>
-                      <textarea
-                        className="w-full p-3 border rounded-md resize-none"
-                        rows={3}
-                        value={systemSettings.platform?.platform_description || 'Professional Trading Platform'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, platform_description: e.target.value }
-                        }))}
-                        placeholder="Enter platform description"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Support Email</label>
-                      <Input
-                        type="email"
-                        value={systemSettings.platform?.support_email || 'support@tfxc.com'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, support_email: e.target.value }
-                        }))}
-                        placeholder="Enter support email"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Contact Information</CardTitle>
-                    <CardDescription>Configure company contact details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Phone Number</label>
-                      <Input
-                        value={systemSettings.platform?.phone_number || '+1 (555) 123-4567'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, phone_number: e.target.value }
-                        }))}
-                        placeholder="Enter phone number"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Address</label>
-                      <textarea
-                        className="w-full p-3 border rounded-md resize-none"
-                        rows={3}
-                        value={systemSettings.platform?.address || '123 Trading Street, Financial District, NY 10001'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, address: e.target.value }
-                        }))}
-                        placeholder="Enter company address"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Website URL</label>
-                      <Input
-                        type="url"
-                        value={systemSettings.platform?.website_url || 'https://elitestock.com'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, website_url: e.target.value }
-                        }))}
-                        placeholder="Enter website URL"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="md:col-span-2">
-                  <CardHeader>
-                    <CardTitle>Legal Information</CardTitle>
-                    <CardDescription>Configure legal and regulatory information</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">License Number</label>
-                        <Input
-                          value={systemSettings.platform?.license_number || 'FIN-2024-001'}
-                          onChange={(e) => setSystemSettings(prev => ({
-                            ...prev,
-                            platform: { ...prev.platform, license_number: e.target.value }
-                          }))}
-                          placeholder="Enter license number"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Regulatory Authority</label>
-                        <Input
-                          value={systemSettings.platform?.regulatory_authority || 'SEC'}
-                          onChange={(e) => setSystemSettings(prev => ({
-                            ...prev,
-                            platform: { ...prev.platform, regulatory_authority: e.target.value }
-                          }))}
-                          placeholder="Enter regulatory authority"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Terms of Service URL</label>
-                      <Input
-                        type="url"
-                        value={systemSettings.platform?.terms_url || 'https://elitestock.com/terms'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, terms_url: e.target.value }
-                        }))}
-                        placeholder="Enter terms of service URL"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Privacy Policy URL</label>
-                      <Input
-                        type="url"
-                        value={systemSettings.platform?.privacy_url || 'https://elitestock.com/privacy'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, privacy_url: e.target.value }
-                        }))}
-                        placeholder="Enter privacy policy URL"
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="enabled">Enabled</SelectItem>
+                          <SelectItem value="disabled">Disabled</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </CardContent>
                 </Card>
@@ -2802,23 +2536,24 @@ export default function AdminDashboard() {
 
       {/* KYC Document View Dialog */}
       <Dialog open={kycViewDialog} onOpenChange={setKycViewDialog}>
-        <DialogContent className="max-w-2xl">         <DialogHeader>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
             <DialogTitle>KYC Document Details</DialogTitle>
             <DialogDescription>
               Review the submitted KYC document information
             </DialogDescription>
           </DialogHeader>
-
+          
           {selectedKycDocument && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground">Account Information</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground">User Information</h4>
                   <p><strong>User ID:</strong> {selectedKycDocument.userId}</p>
                   <p><strong>Full Name:</strong> {selectedKycDocument.user?.fullName || 'N/A'}</p>
                   <p><strong>Email:</strong> {selectedKycDocument.user?.email || 'N/A'}</p>
                 </div>
-
+                
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">Document Information</h4>
                   <p><strong>Document Type:</strong> {selectedKycDocument.documentType?.replace('_', ' ').toUpperCase() || 'N/A'}</p>
@@ -2954,7 +2689,7 @@ export default function AdminDashboard() {
                   )}
                 </div>
               </div>
-
+              
               <div>
                 <h4 className="font-medium text-sm text-muted-foreground mb-2">Current Status</h4>
                 <Badge variant={selectedKycDocument.verificationStatus === 'verified' ? 'default' :
@@ -2969,7 +2704,7 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
-
+              
               <div className="flex gap-3 pt-4 border-t">
                 <Button
                   onClick={() => {
@@ -3011,7 +2746,7 @@ export default function AdminDashboard() {
               Complete user information and account details
             </DialogDescription>
           </DialogHeader>
-
+          
           {selectedUser && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -3023,7 +2758,7 @@ export default function AdminDashboard() {
                   <p><strong>Email:</strong> {selectedUser.email}</p>
                   <p><strong>Role:</strong> {selectedUser.role}</p>
                 </div>
-
+                
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">Account Status</h4>
                   <p><strong>Balance:</strong> ${selectedUser.balance}</p>
@@ -3032,7 +2767,7 @@ export default function AdminDashboard() {
                   <p><strong>Created:</strong> {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
-
+              
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={() => {
@@ -3058,7 +2793,7 @@ export default function AdminDashboard() {
               Perform actions on {selectedUsers.length} selected users
             </DialogDescription>
           </DialogHeader>
-
+          
           <div className="space-y-4">
             <div>
               <Label htmlFor="bulk-action">Select Action</Label>
@@ -3076,7 +2811,7 @@ export default function AdminDashboard() {
               </Select>
             </div>
           </div>
-
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkActionDialog(false)}>
               Cancel
