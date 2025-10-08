@@ -1074,12 +1074,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { password, ...userWithoutPassword } = user;
         res.json(userWithoutPassword);
       } catch (error) {
-        console.error("Update user error:", error); // Added logging for clarity
+        console.error("Update user error:", error);
         if (error instanceof z.ZodError) {
           res.status(400).json({ message: error.errors });
         } else {
           res.status(500).json({ message: "Failed to update user" });
         }
+      }
+    },
+  );
+
+  app.post(
+    "/api/user/change-password",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.session?.userId;
+
+        if (!userId) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const user = await storageInstance.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Validate current password
+        const isValidPassword = await validatePassword(currentPassword, user.password);
+        if (!isValidPassword) {
+          return res.status(400).json({ message: "Current password is incorrect" });
+        }
+
+        // Hash new password
+        const hashedPassword = await hashPassword(newPassword);
+        await storageInstance.updateUser(userId, { password: hashedPassword });
+
+        res.json({ message: "Password changed successfully" });
+      } catch (error) {
+        console.error("Change password error:", error);
+        res.status(500).json({ message: "Failed to change password" });
       }
     },
   );

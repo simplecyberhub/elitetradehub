@@ -127,30 +127,96 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   return false;
 }
 
+// Professional email template wrapper
+const getEmailTemplate = (title: string, content: string, platformName: string = "EliteStock Trading") => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; }
+        .logo { color: #ffffff; font-size: 28px; font-weight: bold; margin: 0; }
+        .content { padding: 30px; color: #333333; line-height: 1.6; }
+        .title { color: #667eea; font-size: 24px; margin-bottom: 20px; }
+        .message { background: #f8f9fa; padding: 20px; border-left: 4px solid #667eea; margin: 20px 0; border-radius: 4px; }
+        .button { display: inline-block; padding: 12px 30px; background: #667eea; color: #ffffff; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666666; font-size: 12px; border-top: 1px solid #e0e0e0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 class="logo">${platformName}</h1>
+        </div>
+        <div class="content">
+          <h2 class="title">${title}</h2>
+          <div class="message">
+            ${content}
+          </div>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} ${platformName}. All rights reserved.</p>
+          <p>This is an automated message, please do not reply.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
 // Email templates
 export const emailTemplates = {
-  welcomeEmail: (username: string) => ({
-    subject: "Welcome to EliteStock Trading Platform",
+  welcomeEmail: (username: string, platformName: string = "EliteStock Trading") => ({
+    subject: `Welcome to ${platformName}!`,
     text: `Welcome ${username}! Your account has been created successfully.`,
-    html: `<h1>Welcome ${username}!</h1><p>Your account has been created successfully.</p>`,
+    html: getEmailTemplate(
+      `Welcome, ${username}!`,
+      `<p>Your account has been created successfully. You can now access all our trading features.</p>
+       <p>Get started by completing your profile and exploring our markets.</p>
+       <a href="${process.env.FRONTEND_URL || 'https://your-platform.com'}" class="button">Get Started</a>`,
+      platformName
+    ),
   }),
 
-  depositConfirmation: (amount: string, currency: string) => ({
+  depositConfirmation: (amount: string, currency: string, platformName: string = "EliteStock Trading") => ({
     subject: "Deposit Confirmation",
     text: `Your deposit of ${amount} ${currency} has been confirmed.`,
-    html: `<h1>Deposit Confirmed</h1><p>Your deposit of <strong>${amount} ${currency}</strong> has been confirmed.</p>`,
+    html: getEmailTemplate(
+      "Deposit Confirmed",
+      `<p>Your deposit has been successfully processed.</p>
+       <p><strong>Amount:</strong> ${amount} ${currency}</p>
+       <p>The funds are now available in your account.</p>`,
+      platformName
+    ),
   }),
 
-  withdrawalRequest: (amount: string, currency: string) => ({
+  withdrawalRequest: (amount: string, currency: string, platformName: string = "EliteStock Trading") => ({
     subject: "Withdrawal Request Received",
     text: `Your withdrawal request for ${amount} ${currency} has been received and is being processed.`,
-    html: `<h1>Withdrawal Request</h1><p>Your withdrawal request for <strong>${amount} ${currency}</strong> has been received and is being processed.</p>`,
+    html: getEmailTemplate(
+      "Withdrawal Request",
+      `<p>Your withdrawal request has been received and is being processed.</p>
+       <p><strong>Amount:</strong> ${amount} ${currency}</p>
+       <p>You will receive a notification once the withdrawal is completed.</p>`,
+      platformName
+    ),
   }),
 
-  kycStatusUpdate: (status: string) => ({
+  kycStatusUpdate: (status: string, platformName: string = "EliteStock Trading") => ({
     subject: `KYC Verification ${status === "verified" ? "Approved" : status === "rejected" ? "Rejected" : "Update"}`,
     text: `Your KYC verification status has been updated to: ${status}. ${status === "verified" ? "You can now access all platform features." : status === "rejected" ? "Please resubmit your documents with correct information." : ""}`,
-    html: `<h1>KYC Verification ${status === "verified" ? "Approved" : status === "rejected" ? "Rejected" : "Update"}</h1><p>Your KYC verification status has been updated to: <strong>${status}</strong>.</p>${status === "verified" ? "<p>You can now access all platform features.</p>" : status === "rejected" ? "<p>Please resubmit your documents with correct information.</p>" : ""}`,
+    html: getEmailTemplate(
+      `KYC Verification ${status === "verified" ? "Approved" : status === "rejected" ? "Rejected" : "Update"}`,
+      `<p>Your KYC verification status has been updated to: <strong style="color: ${status === 'verified' ? '#10b981' : status === 'rejected' ? '#ef4444' : '#f59e0b'}">${status.toUpperCase()}</strong></p>
+       ${status === "verified" ? "<p>Congratulations! You can now access all platform features.</p>" : 
+         status === "rejected" ? "<p>Please resubmit your documents with the correct information.</p>" : 
+         "<p>Your documents are being reviewed. We'll notify you once the process is complete.</p>"}`,
+      platformName
+    ),
   }),
 };
 

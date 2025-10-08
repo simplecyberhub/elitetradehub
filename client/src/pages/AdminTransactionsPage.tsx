@@ -163,6 +163,17 @@ const AdminTransactionsPage: React.FC = () => {
     }
   };
 
+  const getMethodDisplay = (method: string) => {
+    const methodMap: Record<string, string> = {
+      'credit_card': 'Credit Card',
+      'bank_transfer': 'Bank Transfer',
+      'crypto': 'Cryptocurrency',
+      'platform': 'Platform Balance',
+      'balance': 'Account Balance'
+    };
+    return methodMap[method] || method || 'Not Specified';
+  };
+
   const parseWithdrawalDetails = (details: string) => {
     try {
       return JSON.parse(details);
@@ -235,7 +246,7 @@ const AdminTransactionsPage: React.FC = () => {
                               <strong>Email:</strong> {transaction.user.email}
                             </p>
                             <p className="text-sm text-neutral-600">
-                              <strong>Method:</strong> {transaction.method.replace('_', ' ')}
+                              <strong>Method:</strong> {getMethodDisplay(transaction.method)}
                             </p>
                             <p className="text-sm text-neutral-600">
                               <strong>Date:</strong> {format(new Date(transaction.createdAt), 'MMM dd, yyyy HH:mm')}
@@ -329,8 +340,30 @@ const AdminTransactionsPage: React.FC = () => {
                   User: {reviewingTransaction.user.fullName || reviewingTransaction.user.username}
                 </p>
                 <p className="text-sm text-neutral-600">
-                  Method: {reviewingTransaction.method.replace('_', ' ')}
+                  Method: {getMethodDisplay(reviewingTransaction.method)}
                 </p>
+                {reviewingTransaction.paymentProofUrl && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium mb-2">Payment Proof:</p>
+                    <a 
+                      href={reviewingTransaction.paymentProofUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-primary hover:underline mb-2"
+                    >
+                      <FileImage className="h-4 w-4" />
+                      View Payment Proof
+                    </a>
+                    <img 
+                      src={reviewingTransaction.paymentProofUrl} 
+                      alt="Payment Proof" 
+                      className="max-w-full h-auto rounded border"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div>

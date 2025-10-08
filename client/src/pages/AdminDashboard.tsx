@@ -143,6 +143,13 @@ export default function AdminDashboard() {
       smtp_host: 'smtp.gmail.com',
       smtp_port: '587',
       from_email: 'noreply@elitestock.com'
+    },
+    platform: {
+      platform_name: 'EliteStock Trading',
+      company_name: 'EliteStock Inc.',
+      support_email: 'support@elitestock.com',
+      company_address: '',
+      platform_logo_url: ''
     }
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -272,6 +279,17 @@ export default function AdminDashboard() {
   const viewKycDocument = (document: any) => {
     setSelectedKycDocument(document);
     setKycViewDialog(true);
+  };
+
+  const getMethodDisplay = (method: string) => {
+    const methodMap: Record<string, string> = {
+      'credit_card': 'Credit Card',
+      'bank_transfer': 'Bank Transfer',
+      'crypto': 'Cryptocurrency',
+      'platform': 'Platform Balance',
+      'balance': 'Account Balance'
+    };
+    return methodMap[method] || method || 'Not Specified';
   };
 
   const updateUserBalance = async (userId: number, amount: string, type: string) => {
@@ -2004,29 +2022,89 @@ export default function AdminDashboard() {
                     <CardDescription>Customize email notification templates</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <Tabs defaultValue="welcome" className="space-y-4">
+                    <Tabs defaultValue="platform" className="space-y-4">
                       <TabsList>
+                        <TabsTrigger value="platform">Platform</TabsTrigger>
                         <TabsTrigger value="welcome">Welcome</TabsTrigger>
                         <TabsTrigger value="transaction">Transaction</TabsTrigger>
                         <TabsTrigger value="kyc">KYC</TabsTrigger>
-                        <TabsTrigger value="password">Password Reset</TabsTrigger>
                       </TabsList>
+                      
+                      <TabsContent value="platform" className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-primary">Platform Name</label>
+                          <Input
+                            value={systemSettings.platform?.platform_name || 'EliteStock Trading'}
+                            onChange={(e) => setSystemSettings((prev: any) => ({
+                              ...prev,
+                              platform: { ...prev.platform, platform_name: e.target.value }
+                            }))}
+                            className="bg-white dark:bg-neutral-800 border-primary focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-primary">Company Name</label>
+                          <Input
+                            value={systemSettings.platform?.company_name || 'EliteStock Inc.'}
+                            onChange={(e) => setSystemSettings((prev: any) => ({
+                              ...prev,
+                              platform: { ...prev.platform, company_name: e.target.value }
+                            }))}
+                            className="bg-white dark:bg-neutral-800 border-primary focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-primary">Support Email</label>
+                          <Input
+                            value={systemSettings.platform?.support_email || 'support@elitestock.com'}
+                            onChange={(e) => setSystemSettings((prev: any) => ({
+                              ...prev,
+                              platform: { ...prev.platform, support_email: e.target.value }
+                            }))}
+                            className="bg-white dark:bg-neutral-800 border-primary focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-primary">Company Address</label>
+                          <textarea
+                            className="w-full h-20 p-3 border border-primary rounded-md bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary"
+                            value={systemSettings.platform?.company_address || ''}
+                            onChange={(e) => setSystemSettings((prev: any) => ({
+                              ...prev,
+                              platform: { ...prev.platform, company_address: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-primary">Platform Logo URL</label>
+                          <Input
+                            value={systemSettings.platform?.platform_logo_url || ''}
+                            onChange={(e) => setSystemSettings((prev: any) => ({
+                              ...prev,
+                              platform: { ...prev.platform, platform_logo_url: e.target.value }
+                            }))}
+                            placeholder="https://example.com/logo.png"
+                            className="bg-white dark:bg-neutral-800 border-primary focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+                      </TabsContent>
 
                       <TabsContent value="welcome" className="space-y-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Welcome Email Subject</label>
+                          <label className="text-sm font-medium text-primary">Welcome Email Subject</label>
                           <Input
                             value={systemSettings.templates?.welcome_subject || 'Welcome to EliteStock Trading!'}
                             onChange={(e) => setSystemSettings(prev => ({
                               ...prev,
                               templates: { ...prev.templates, welcome_subject: e.target.value }
                             }))}
+                            className="bg-white dark:bg-neutral-800 border-primary focus:ring-2 focus:ring-primary"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Welcome Email Content</label>
+                          <label className="text-sm font-medium text-primary">Welcome Email Content</label>
                           <textarea
-                            className="w-full h-32 p-3 border rounded-md"
+                            className="w-full h-32 p-3 border border-primary rounded-md bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary text-foreground"
                             value={systemSettings.templates?.welcome_content || 'Welcome to EliteStock Trading Platform! Your account has been created successfully.'}
                             onChange={(e) => setSystemSettings(prev => ({
                               ...prev,
@@ -2427,6 +2505,31 @@ export default function AdminDashboard() {
                   <p><strong>Expiry Date:</strong> {selectedKycDocument.expiryDate || 'N/A'}</p>
                   <p><strong>Submitted:</strong> {new Date(selectedKycDocument.submittedAt).toLocaleDateString()}</p>
                 </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground mb-2">Uploaded Document</h4>
+                {selectedKycDocument.documentUrl && (
+                  <div className="mt-2">
+                    <a 
+                      href={selectedKycDocument.documentUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-primary hover:underline"
+                    >
+                      <FileImage className="h-4 w-4" />
+                      View Document
+                    </a>
+                    <img 
+                      src={selectedKycDocument.documentUrl} 
+                      alt="KYC Document" 
+                      className="mt-2 max-w-full h-auto rounded border"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               
               <div>
