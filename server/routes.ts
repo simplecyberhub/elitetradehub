@@ -1084,71 +1084,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // User preferences endpoints
-  app.get(
-    "/api/user/:id/preferences",
-    requireAuth,
-    async (req: Request, res: Response) => {
-      try {
-        const userId = parseInt(req.params.id);
-
-        // Ensure user can only access their own preferences
-        if (req.session?.userId !== userId) {
-          return res.status(403).json({ message: "Forbidden" });
-        }
-
-        const preferences = await storageInstance.getUserPreferences(userId);
-        res.json(preferences || {
-          emailNotifications: true,
-          smsAlerts: false,
-          priceAlerts: true,
-          tradingActivity: true,
-          darkMode: true,
-          displayCurrency: 'USD'
-        });
-      } catch (error) {
-        console.error("Get user preferences error:", error);
-        res.status(500).json({ message: "Failed to get preferences" });
-      }
-    }
-  );
-
-  app.patch(
-    "/api/user/:id/preferences",
-    requireAuth,
-    async (req: Request, res: Response) => {
-      try {
-        const userId = parseInt(req.params.id);
-
-        // Ensure user can only update their own preferences
-        if (req.session?.userId !== userId) {
-          return res.status(403).json({ message: "Forbidden" });
-        }
-
-        const validatedData = z
-          .object({
-            emailNotifications: z.boolean().optional(),
-            smsAlerts: z.boolean().optional(),
-            priceAlerts: z.boolean().optional(),
-            tradingActivity: z.boolean().optional(),
-            darkMode: z.boolean().optional(),
-            displayCurrency: z.string().optional(),
-          })
-          .parse(req.body);
-
-        const preferences = await storageInstance.updateUserPreferences(userId, validatedData);
-        res.json(preferences);
-      } catch (error) {
-        console.error("Update user preferences error:", error);
-        if (error instanceof z.ZodError) {
-          res.status(400).json({ message: error.errors });
-        } else {
-          res.status(500).json({ message: "Failed to update preferences" });
-        }
-      }
-    }
-  );
-
   // Asset routes
   app.get("/api/assets", async (req: Request, res: Response) => {
     try {
@@ -1723,7 +1658,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const user = await storageInstance.getUser(transaction.userId);
             return {
               ...transaction,
-              method: transaction.method || transaction.paymentMethod || 'Not specified',
               user: {
                 id: user?.id,
                 username: user?.username,

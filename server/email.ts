@@ -127,146 +127,31 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   return false;
 }
 
-// Professional Email Templates with Branding
+// Email templates
 export const emailTemplates = {
-  welcomeEmail: (username: string, dashboardUrl: string = 'https://your-domain.com/dashboard') => ({
+  welcomeEmail: (username: string) => ({
     subject: "Welcome to EliteStock Trading Platform",
     text: `Welcome ${username}! Your account has been created successfully.`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f8fafc; }
-          .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 30px; text-align: center; }
-          .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-          .content { padding: 30px; background: white; margin: 20px 0; border-radius: 8px; }
-          .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }
-          .btn { background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; }
-          .btn:hover { background: #2563eb; }
-        </style>
-      </head>
-      <body>
-        <div class="email-container">
-          <div class="header">
-            <div class="logo">🚀 EliteStock Trading</div>
-            <p style="margin: 0; opacity: 0.9;">Professional Trading Platform</p>
-          </div>
-          <div class="content">
-            <h2 style="color: #1e40af;">Welcome ${username}!</h2>
-            <p>Your account has been successfully created and you're ready to start trading with EliteStock.</p>
-            <p>🎯 <strong>What's next?</strong></p>
-            <ul style="padding-left: 20px;">
-              <li>Complete your KYC verification</li>
-              <li>Make your first deposit</li>
-              <li>Explore our trading tools</li>
-            </ul>
-            <a href="${dashboardUrl}" class="btn">Access Your Dashboard</a>
-          </div>
-          <div class="footer">
-            <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
-            <p>This email was sent to you because you created an account with us.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `,
+    html: `<h1>Welcome ${username}!</h1><p>Your account has been created successfully.</p>`,
   }),
 
-  transactionUpdate: (type: string, amount: string, status: string, date: string) => ({
-    subject: `Transaction ${status.charAt(0).toUpperCase() + status.slice(1)} - EliteStock`,
-    text: `Your ${type} of $${amount} is now ${status}.`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f8fafc; }
-          .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 30px; text-align: center; }
-          .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-          .content { padding: 30px; background: white; margin: 20px 0; border-radius: 8px; }
-          .transaction-details { background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6; }
-          .status-completed { color: #10b981; font-weight: bold; }
-          .status-pending { color: #f59e0b; font-weight: bold; }
-          .status-failed { color: #ef4444; font-weight: bold; }
-          .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <div class="email-container">
-          <div class="header">
-            <div class="logo">🚀 EliteStock Trading</div>
-            <p style="margin: 0; opacity: 0.9;">Transaction Notification</p>
-          </div>
-          <div class="content">
-            <h2 style="color: #1e40af;">Transaction Update</h2>
-            <div class="transaction-details">
-              <p><strong>Type:</strong> ${type.toUpperCase()}</p>
-              <p><strong>Amount:</strong> $${amount}</p>
-              <p><strong>Status:</strong> <span class="status-${status}">${status.toUpperCase()}</span></p>
-              <p><strong>Date:</strong> ${date}</p>
-            </div>
-            ${status === 'completed' ? '<p style="color: #10b981;">✅ Your transaction has been successfully processed.</p>' : ''}
-            ${status === 'pending' ? '<p style="color: #f59e0b;">⏳ Your transaction is being reviewed by our team.</p>' : ''}
-            ${status === 'failed' ? '<p style="color: #ef4444;">❌ Your transaction could not be completed. Please contact support.</p>' : ''}
-          </div>
-          <div class="footer">
-            <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `,
+  depositConfirmation: (amount: string, currency: string) => ({
+    subject: "Deposit Confirmation",
+    text: `Your deposit of ${amount} ${currency} has been confirmed.`,
+    html: `<h1>Deposit Confirmed</h1><p>Your deposit of <strong>${amount} ${currency}</strong> has been confirmed.</p>`,
   }),
 
-  kycStatusUpdate: (status: string) => {
-    const statusMessages = {
-      verified: "Your identity verification has been successfully completed! You now have full access to all platform features.",
-      rejected: "Your KYC verification was not approved. Please resubmit your documents with correct information.",
-      pending: "Your KYC documents are being reviewed. This usually takes 1-2 business days."
-    };
+  withdrawalRequest: (amount: string, currency: string) => ({
+    subject: "Withdrawal Request Received",
+    text: `Your withdrawal request for ${amount} ${currency} has been received and is being processed.`,
+    html: `<h1>Withdrawal Request</h1><p>Your withdrawal request for <strong>${amount} ${currency}</strong> has been received and is being processed.</p>`,
+  }),
 
-    return {
-      subject: `KYC Verification ${status === "verified" ? "Approved" : status === "rejected" ? "Rejected" : "Update"}`,
-      text: `Your KYC verification status: ${status}. ${statusMessages[status as keyof typeof statusMessages] || ''}`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f8fafc; }
-            .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 30px; text-align: center; }
-            .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-            .content { padding: 30px; background: white; margin: 20px 0; border-radius: 8px; }
-            .status-box { padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
-            .status-verified { background: #dcfce7; border: 2px solid #10b981; color: #065f46; }
-            .status-rejected { background: #fee2e2; border: 2px solid #ef4444; color: #991b1b; }
-            .status-pending { background: #fef3c7; border: 2px solid #f59e0b; color: #92400e; }
-            .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }
-          </style>
-        </head>
-        <body>
-          <div class="email-container">
-            <div class="header">
-              <div class="logo">🚀 EliteStock Trading</div>
-              <p style="margin: 0; opacity: 0.9;">KYC Verification Update</p>
-            </div>
-            <div class="content">
-              <h2 style="color: #1e40af;">KYC Status Update</h2>
-              <div class="status-box status-${status}">
-                <h3>${status === 'verified' ? '✅' : status === 'rejected' ? '❌' : '⏳'} Status: ${status.toUpperCase()}</h3>
-                <p>${statusMessages[status as keyof typeof statusMessages] || 'Your KYC status has been updated.'}</p>
-              </div>
-            </div>
-            <div class="footer">
-              <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
-    };
-  },
+  kycStatusUpdate: (status: string) => ({
+    subject: `KYC Verification ${status === "verified" ? "Approved" : status === "rejected" ? "Rejected" : "Update"}`,
+    text: `Your KYC verification status has been updated to: ${status}. ${status === "verified" ? "You can now access all platform features." : status === "rejected" ? "Please resubmit your documents with correct information." : ""}`,
+    html: `<h1>KYC Verification ${status === "verified" ? "Approved" : status === "rejected" ? "Rejected" : "Update"}</h1><p>Your KYC verification status has been updated to: <strong>${status}</strong>.</p>${status === "verified" ? "<p>You can now access all platform features.</p>" : status === "rejected" ? "<p>Please resubmit your documents with correct information.</p>" : ""}`,
+  }),
 };
 
 export async function sendTransactionEmail(
