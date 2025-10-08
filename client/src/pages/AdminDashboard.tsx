@@ -143,28 +143,6 @@ export default function AdminDashboard() {
       smtp_host: 'smtp.gmail.com',
       smtp_port: '587',
       from_email: 'noreply@elitestock.com'
-    },
-    security: {
-      require_2fa: 'disabled',
-      session_timeout: '60',
-      password_policy: 'standard',
-      max_login_attempts: '5',
-      api_rate_limit: '100',
-      api_logging: 'enabled',
-      ip_whitelist: '',
-    },
-    platform: {
-      platform_name: 'TFXC Trading',
-      company_name: 'TFXC Inc.',
-      platform_description: 'Professional Trading Platform',
-      support_email: 'support@tfxc.com',
-      phone_number: '+1 (555) 123-4567',
-      address: '123 Trading Street, Financial District, NY 10001',
-      website_url: 'https://elitestock.com',
-      license_number: 'FIN-2024-001',
-      regulatory_authority: 'SEC',
-      terms_url: 'https://elitestock.com/terms',
-      privacy_url: 'https://elitestock.com/privacy',
     }
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -384,7 +362,7 @@ export default function AdminDashboard() {
 
   const selectAllUsers = () => {
     const filteredUsers = getFilteredUsers();
-    const allSelected = filteredUsers.length > 0 && filteredUsers.every(u => selectedUsers.includes(u.id));
+    const allSelected = filteredUsers.every(u => selectedUsers.includes(u.id));
     if (allSelected) {
       setSelectedUsers([]);
     } else {
@@ -427,12 +405,12 @@ export default function AdminDashboard() {
         (userFilter === 'suspended' && u.suspended) ||
         (userFilter === 'unverified' && u.kycStatus === 'unverified') ||
         (userFilter === 'verified' && u.kycStatus === 'verified');
-
+      
       const matchesSearch = !searchUser || 
         u.username.toLowerCase().includes(searchUser.toLowerCase()) ||
         u.email.toLowerCase().includes(searchUser.toLowerCase()) ||
         u.fullName.toLowerCase().includes(searchUser.toLowerCase());
-
+      
       return matchesFilter && matchesSearch;
     });
   };
@@ -692,28 +670,6 @@ export default function AdminDashboard() {
         smtp_host: 'smtp.gmail.com',
         smtp_port: '587',
         from_email: 'noreply@elitestock.com'
-      },
-      security: {
-        require_2fa: 'disabled',
-        session_timeout: '60',
-        password_policy: 'standard',
-        max_login_attempts: '5',
-        api_rate_limit: '100',
-        api_logging: 'enabled',
-        ip_whitelist: '',
-      },
-      platform: {
-        platform_name: 'TFXC Trading',
-        company_name: 'TFXC Inc.',
-        platform_description: 'Professional Trading Platform',
-        support_email: 'support@tfxc.com',
-        phone_number: '+1 (555) 123-4567',
-        address: '123 Trading Street, Financial District, NY 10001',
-        website_url: 'https://elitestock.com',
-        license_number: 'FIN-2024-001',
-        regulatory_authority: 'SEC',
-        terms_url: 'https://elitestock.com/terms',
-        privacy_url: 'https://elitestock.com/privacy',
       }
     });
 
@@ -1058,76 +1014,43 @@ export default function AdminDashboard() {
                                 </div>
 
                                 {/* Payment Details */}
-                                <div>
-                                  <h3 className="font-medium mb-2">Payment Details</h3>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <p><strong>Payment Method:</strong> {transaction.method || 'Not specified'}</p>
-                                      <p><strong>Transaction Reference:</strong> {transaction.transactionRef || transaction.id}</p>
-                                    </div>
-
-                                    {/* Payment Proof Section */}
-                                    {(transaction.paymentProof || transaction.paymentProofUrl) && (
-                                      <div className="border rounded-lg p-3 bg-muted/30">
-                                        <p className="font-medium mb-2">📎 Payment Proof:</p>
-                                        <div className="flex items-center gap-3">
+                                {(transaction.paymentProof || transaction.paymentNotes || transaction.withdrawalAddress) && (
+                                  <div>
+                                    <h3 className="font-medium mb-2">Payment Details</h3>
+                                    <div className="space-y-2">
+                                      {transaction.paymentProof && (
+                                        <div>
+                                          <p><strong>Payment Proof:</strong></p>
                                           <a 
-                                            href={transaction.paymentProof || transaction.paymentProofUrl}
+                                            href={transaction.paymentProof}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-primary hover:underline flex items-center gap-2 bg-primary/10 px-3 py-2 rounded"
+                                            className="text-primary hover:underline flex items-center gap-2"
                                           >
                                             <FileImage className="h-4 w-4" />
-                                            View Payment Receipt
+                                            View Payment Proof
                                           </a>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => window.open(transaction.paymentProof || transaction.paymentProofUrl, '_blank')}
-                                          >
-                                            <Eye className="h-4 w-4 mr-1" />
-                                            Preview
-                                          </Button>
                                         </div>
-                                      </div>
-                                    )}
-
-                                    {/* Payment Notes */}
-                                    {transaction.paymentNotes && (
-                                      <div className="border rounded-lg p-3 bg-muted/30">
-                                        <p className="font-medium mb-1">💬 Payment Notes:</p>
-                                        <p className="text-sm">{transaction.paymentNotes}</p>
-                                      </div>
-                                    )}
-
-                                    {/* Withdrawal Address */}
-                                    {transaction.withdrawalAddress && (
-                                      <div className="border rounded-lg p-3 bg-muted/30">
-                                        <p className="font-medium mb-1">🏦 Withdrawal Address:</p>
-                                        <p className="text-sm font-mono bg-background p-2 rounded border">{transaction.withdrawalAddress}</p>
-                                      </div>
-                                    )}
-
-                                    {/* Additional Transaction Details */}
-                                    {transaction.withdrawalDetails && (
-                                      <div className="border rounded-lg p-3 bg-muted/30">
-                                        <p className="font-medium mb-1">📋 Additional Details:</p>
-                                        <pre className="text-sm bg-background p-2 rounded border overflow-x-auto">
-                                          {typeof transaction.withdrawalDetails === 'string' 
-                                            ? transaction.withdrawalDetails 
-                                            : JSON.stringify(transaction.withdrawalDetails, null, 2)}
-                                        </pre>
-                                      </div>
-                                    )}
-
-                                    {/* If no payment details available */}
-                                    {!transaction.paymentProof && !transaction.paymentProofUrl && !transaction.paymentNotes && !transaction.withdrawalAddress && (
-                                      <div className="border rounded-lg p-3 bg-yellow-50 border-yellow-200">
-                                        <p className="text-sm text-yellow-800">ℹ️ No additional payment details provided by user</p>
-                                      </div>
-                                    )}
+                                      )}
+                                      {transaction.paymentNotes && (
+                                        <p><strong>Payment Notes:</strong> {transaction.paymentNotes}</p>
+                                      )}
+                                      {transaction.withdrawalAddress && (
+                                        <p><strong>Withdrawal Address:</strong> {transaction.withdrawalAddress}</p>
+                                      )}
+                                      {transaction.withdrawalDetails && (
+                                        <div>
+                                          <p><strong>Withdrawal Details:</strong></p>
+                                          <pre className="text-sm bg-muted p-2 rounded mt-1 overflow-x-auto">
+                                            {typeof transaction.withdrawalDetails === 'string' 
+                                              ? transaction.withdrawalDetails 
+                                              : JSON.stringify(transaction.withdrawalDetails, null, 2)}
+                                          </pre>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
 
                                 {/* Admin Review Section */}
                                 <div className="border-t pt-4">
@@ -1281,56 +1204,56 @@ export default function AdminDashboard() {
                           <Button size="sm" variant="outline" onClick={() => viewUserDetails(user)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline" onClick={() => setSelectedUser(user)}>
-                                <DollarSign className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Adjust Balance - {user.fullName}</DialogTitle>
-                                <DialogDescription>
-                                  Current balance: ${user.balance}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label htmlFor="amount">Amount</Label>
-                                  <Input
-                                    type="number"
-                                    value={balanceUpdate.amount}
-                                    onChange={(e) => setBalanceUpdate(prev => ({ ...prev, amount: e.target.value }))}
-                                    placeholder="Enter amount"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="type">Action</Label>
-                                  <Select value={balanceUpdate.type} onValueChange={(value) =>
-                                    setBalanceUpdate(prev => ({ ...prev, type: value }))
-                                  }>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="add">Add to Balance</SelectItem>
-                                      <SelectItem value="subtract">Subtract from Balance</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button
-                                  onClick={() => updateUserBalance(user.id, balanceUpdate.amount, balanceUpdate.type)}
-                                  disabled={!balanceUpdate.amount}
-                                >
-                                  Update Balance
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
                           {user.role !== 'admin' && (
                             <>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline" onClick={() => setSelectedUser(user)}>
+                                    <DollarSign className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Adjust Balance - {user.fullName}</DialogTitle>
+                                    <DialogDescription>
+                                      Current balance: ${user.balance}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="amount">Amount</Label>
+                                      <Input
+                                        type="number"
+                                        value={balanceUpdate.amount}
+                                        onChange={(e) => setBalanceUpdate(prev => ({ ...prev, amount: e.target.value }))}
+                                        placeholder="Enter amount"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="type">Action</Label>
+                                      <Select value={balanceUpdate.type} onValueChange={(value) =>
+                                        setBalanceUpdate(prev => ({ ...prev, type: value }))
+                                      }>
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="add">Add to Balance</SelectItem>
+                                          <SelectItem value="subtract">Subtract from Balance</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button
+                                      onClick={() => updateUserBalance(user.id, balanceUpdate.amount, balanceUpdate.type)}
+                                      disabled={!balanceUpdate.amount}
+                                    >
+                                      Update Balance
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1859,13 +1782,12 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs defaultValue="trading" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="trading">Trading</TabsTrigger>
               <TabsTrigger value="email">Email</TabsTrigger>
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="copytrading">Copy Trading</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
-              <TabsTrigger value="platform">Platform</TabsTrigger>
             </TabsList>
 
             <TabsContent value="trading" className="space-y-4">
@@ -2079,7 +2001,7 @@ export default function AdminDashboard() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Email Templates</CardTitle>
-                    <CardDescription>Customize email notification templates with professional branding</CardDescription>
+                    <CardDescription>Customize email notification templates</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <Tabs defaultValue="welcome" className="space-y-4">
@@ -2104,43 +2026,13 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Welcome Email Content</label>
                           <textarea
-                            className="w-full h-48 p-4 bg-white border-2 border-primary/30 rounded-lg text-gray-900 font-mono text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                            placeholder="Enter HTML email template..."
-                            value={systemSettings.templates?.welcome_content || `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-    .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 30px; text-align: center; }
-    .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-    .content { padding: 30px; background: white; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; }
-    .btn { background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <div class="logo">EliteStock Trading</div>
-      <p>Professional Trading Platform</p>
-    </div>
-    <div class="content">
-      <h2>Welcome {{user.username}}!</h2>
-      <p>Your account has been successfully created. You can now access all our trading features.</p>
-      <a href="{{dashboard_url}}" class="btn">Access Dashboard</a>
-    </div>
-    <div class="footer">
-      <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`}
+                            className="w-full h-32 p-3 border rounded-md"
+                            value={systemSettings.templates?.welcome_content || 'Welcome to EliteStock Trading Platform! Your account has been created successfully.'}
                             onChange={(e) => setSystemSettings(prev => ({
                               ...prev,
                               templates: { ...prev.templates, welcome_content: e.target.value }
                             }))}
                           />
-                          <p className="text-xs text-muted-foreground">Use HTML with CSS for professional styling. Available variables: {{username}}, {{dashboard_url}}</p>
                         </div>
                       </TabsContent>
 
@@ -2158,50 +2050,13 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Transaction Email Content</label>
                           <textarea
-                            className="w-full h-48 p-4 bg-white border-2 border-primary/30 rounded-lg text-gray-900 font-mono text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                            placeholder="Enter HTML email template..."
-                            value={systemSettings.templates?.transaction_content || `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-    .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 30px; text-align: center; }
-    .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-    .content { padding: 30px; background: white; }
-    .transaction-details { background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; }
-    .status-approved { color: #10b981; font-weight: bold; }
-    .status-pending { color: #f59e0b; font-weight: bold; }
-    .status-rejected { color: #ef4444; font-weight: bold; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <div class="logo">EliteStock Trading</div>
-      <p>Transaction Notification</p>
-    </div>
-    <div class="content">
-      <h2>Transaction Update</h2>
-      <div class="transaction-details">
-        <p><strong>Type:</strong> {{type}}</p>
-        <p><strong>Amount:</strong> ${{amount}}</p>
-        <p><strong>Status:</strong> <span class="status-{{status}}">{{status}}</span></p>
-        <p><strong>Date:</strong> {{date}}</p>
-      </div>
-    </div>
-    <div class="footer">
-      <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`}
+                            className="w-full h-32 p-3 border rounded-md"
+                            value={systemSettings.templates?.transaction_content || 'Your transaction has been processed. Amount: {{amount}}, Type: {{type}}, Status: {{status}}'}
                             onChange={(e) => setSystemSettings(prev => ({
                               ...prev,
                               templates: { ...prev.templates, transaction_content: e.target.value }
                             }))}
                           />
-                          <p className="text-xs text-muted-foreground">Available variables: {{type}}, {{amount}}, {{status}}, {{date}}</p>
                         </div>
                       </TabsContent>
 
@@ -2219,102 +2074,13 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium">KYC Email Content</label>
                           <textarea
-                            className="w-full h-48 p-4 bg-white border-2 border-primary/30 rounded-lg text-gray-900 font-mono text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                            placeholder="Enter HTML email template..."
-                            value={systemSettings.templates?.kyc_content || `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-    .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 30px; text-align: center; }
-    .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-    .content { padding: 30px; background: white; }
-    .status-box { padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
-    .status-verified { background: #dcfce7; border: 2px solid #10b981; color: #065f46; }
-    .status-rejected { background: #fee2e2; border: 2px solid #ef4444; color: #991b1b; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <div class="logo">EliteStock Trading</div>
-      <p>KYC Verification Update</p>
-    </div>
-    <div class="content">
-      <h2>KYC Status Update</h2>
-      <div class="status-box status-{{status}}">
-        <h3>Your KYC status: {{status}}</h3>
-        <p>{{status_message}}</p>
-      </div>
-    </div>
-    <div class="footer">
-      <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`}
+                            className="w-full h-32 p-3 border rounded-md"
+                            value={systemSettings.templates?.kyc_content || 'Your KYC verification status has been updated to: {{status}}'}
                             onChange={(e) => setSystemSettings(prev => ({
                               ...prev,
                               templates: { ...prev.templates, kyc_content: e.target.value }
                             }))}
                           />
-                          <p className="text-xs text-muted-foreground">Available variables: {{status}}, {{status_message}}</p>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="password" className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Password Reset Subject</label>
-                          <Input
-                            value={systemSettings.templates?.password_subject || 'Password Reset Request'}
-                            onChange={(e) => setSystemSettings(prev => ({
-                              ...prev,
-                              templates: { ...prev.templates, password_subject: e.target.value }
-                            }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Password Reset Content</label>
-                          <textarea
-                            className="w-full h-48 p-4 bg-white border-2 border-primary/30 rounded-lg text-gray-900 font-mono text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                            placeholder="Enter HTML email template..."
-                            value={systemSettings.templates?.password_content || `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-    .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 30px; text-align: center; }
-    .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-    .content { padding: 30px; background: white; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; }
-    .btn { background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <div class="logo">EliteStock Trading</div>
-      <p>Password Reset Request</p>
-    </div>
-    <div class="content">
-      <h2>Password Reset</h2>
-      <p>We received a request to reset your password. Click the button below to set a new password:</p>
-      <a href="{{reset_url}}" class="btn">Reset Password</a>
-      <p>If you did not request this, please ignore this email.</p>
-    </div>
-    <div class="footer">
-      <p>&copy; 2025 EliteStock Trading. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`}
-                            onChange={(e) => setSystemSettings(prev => ({
-                              ...prev,
-                              templates: { ...prev.templates, password_content: e.target.value }
-                            }))}
-                          />
-                          <p className="text-xs text-muted-foreground">Available variables: {{reset_url}}</p>
                         </div>
                       </TabsContent>
                     </Tabs>
@@ -2435,28 +2201,10 @@ export default function AdminDashboard() {
               <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Platform Security</CardTitle>
-                    <CardDescription>Configure platform security settings</CardDescription>
+                    <CardTitle>Security Settings</CardTitle>
+                    <CardDescription>Configure platform security parameters</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Two-Factor Authentication Required</label>
-                      <Select
-                        value={systemSettings.security?.require_2fa || 'disabled'}
-                        onValueChange={(value) => setSystemSettings(prev => ({
-                          ...prev,
-                          security: { ...prev.security, require_2fa: value }
-                        }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="enabled">Required</SelectItem>
-                          <SelectItem value="disabled">Optional</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Session Timeout (minutes)</label>
                       <Input
@@ -2468,28 +2216,8 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Password Policy</label>
-                      <Select
-                        value={systemSettings.security?.password_policy || 'standard'}
-                        onValueChange={(value) => setSystemSettings(prev => ({
-                          ...prev,
-                          security: { ...prev.security, password_policy: value }
-                        }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="strong">Strong</SelectItem>
-                          <SelectItem value="enterprise">Enterprise</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Failed Login Attempts</label>
+                      <label className="text-sm font-medium">Max Login Attempts</label>
                       <Input
-                        type="number"
                         value={systemSettings.security?.max_login_attempts || '5'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
@@ -2497,19 +2225,46 @@ export default function AdminDashboard() {
                         }))}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Account Lockout Duration (minutes)</label>
+                      <Input
+                        value={systemSettings.security?.lockout_duration || '30'}
+                        onChange={(e) => setSystemSettings(prev => ({
+                          ...prev,
+                          security: { ...prev.security, lockout_duration: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Require KYC for Trading</label>
+                      <Select
+                        value={systemSettings.security?.require_kyc || 'enabled'}
+                        onValueChange={(value) => setSystemSettings(prev => ({
+                          ...prev,
+                          security: { ...prev.security, require_kyc: value }
+                        }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="enabled">Enabled</SelectItem>
+                          <SelectItem value="disabled">Disabled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>API Security</CardTitle>
+                    <CardTitle>API & Rate Limiting</CardTitle>
                     <CardDescription>Configure API access and rate limiting</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">API Rate Limit (requests/minute)</label>
                       <Input
-                        type="number"
                         value={systemSettings.security?.api_rate_limit || '100'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
@@ -2518,12 +2273,12 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Enable API Access Logging</label>
+                      <label className="text-sm font-medium">Enable API Access</label>
                       <Select
-                        value={systemSettings.security?.api_logging || 'enabled'}
+                        value={systemSettings.security?.api_enabled || 'enabled'}
                         onValueChange={(value) => setSystemSettings(prev => ({
                           ...prev,
-                          security: { ...prev.security, api_logging: value }
+                          security: { ...prev.security, api_enabled: value }
                         }))}
                       >
                         <SelectTrigger>
@@ -2536,177 +2291,22 @@ export default function AdminDashboard() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">IP Whitelist</label>
-                      <Input
-                        value={systemSettings.security?.ip_whitelist || ''}
-                        onChange={(e) => setSystemSettings(prev => ({
+                      <label className="text-sm font-medium">Maintenance Mode</label>
+                      <Select
+                        value={systemSettings.security?.maintenance_mode || 'disabled'}
+                        onValueChange={(value) => setSystemSettings(prev => ({
                           ...prev,
-                          security: { ...prev.security, ip_whitelist: e.target.value }
+                          security: { ...prev.security, maintenance_mode: value }
                         }))}
-                        placeholder="Enter IP addresses separated by commas"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="platform" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Platform Information</CardTitle>
-                    <CardDescription>Configure platform name and company details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Platform Name</label>
-                      <Input
-                        value={systemSettings.platform?.platform_name || 'TFXC Trading'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, platform_name: e.target.value }
-                        }))}
-                        placeholder="Enter platform name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Company Name</label>
-                      <Input
-                        value={systemSettings.platform?.company_name || 'TFXC Inc.'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, company_name: e.target.value }
-                        }))}
-                        placeholder="Enter company name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Platform Description</label>
-                      <textarea
-                        className="w-full p-3 border rounded-md resize-none"
-                        rows={3}
-                        value={systemSettings.platform?.platform_description || 'Professional Trading Platform'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, platform_description: e.target.value }
-                        }))}
-                        placeholder="Enter platform description"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Support Email</label>
-                      <Input
-                        type="email"
-                        value={systemSettings.platform?.support_email || 'support@tfxc.com'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, support_email: e.target.value }
-                        }))}
-                        placeholder="Enter support email"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Contact Information</CardTitle>
-                    <CardDescription>Configure company contact details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Phone Number</label>
-                      <Input
-                        value={systemSettings.platform?.phone_number || '+1 (555) 123-4567'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, phone_number: e.target.value }
-                        }))}
-                        placeholder="Enter phone number"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Address</label>
-                      <textarea
-                        className="w-full p-3 border rounded-md resize-none"
-                        rows={3}
-                        value={systemSettings.platform?.address || '123 Trading Street, Financial District, NY 10001'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, address: e.target.value }
-                        }))}
-                        placeholder="Enter company address"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Website URL</label>
-                      <Input
-                        type="url"
-                        value={systemSettings.platform?.website_url || 'https://elitestock.com'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, website_url: e.target.value }
-                        }))}
-                        placeholder="Enter website URL"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="md:col-span-2">
-                  <CardHeader>
-                    <CardTitle>Legal Information</CardTitle>
-                    <CardDescription>Configure legal and regulatory information</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">License Number</label>
-                        <Input
-                          value={systemSettings.platform?.license_number || 'FIN-2024-001'}
-                          onChange={(e) => setSystemSettings(prev => ({
-                            ...prev,
-                            platform: { ...prev.platform, license_number: e.target.value }
-                          }))}
-                          placeholder="Enter license number"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Regulatory Authority</label>
-                        <Input
-                          value={systemSettings.platform?.regulatory_authority || 'SEC'}
-                          onChange={(e) => setSystemSettings(prev => ({
-                            ...prev,
-                            platform: { ...prev.platform, regulatory_authority: e.target.value }
-                          }))}
-                          placeholder="Enter regulatory authority"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Terms of Service URL</label>
-                      <Input
-                        type="url"
-                        value={systemSettings.platform?.terms_url || 'https://elitestock.com/terms'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, terms_url: e.target.value }
-                        }))}
-                        placeholder="Enter terms of service URL"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Privacy Policy URL</label>
-                      <Input
-                        type="url"
-                        value={systemSettings.platform?.privacy_url || 'https://elitestock.com/privacy'}
-                        onChange={(e) => setSystemSettings(prev => ({
-                          ...prev,
-                          platform: { ...prev.platform, privacy_url: e.target.value }
-                        }))}
-                        placeholder="Enter privacy policy URL"
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="enabled">Enabled</SelectItem>
+                          <SelectItem value="disabled">Disabled</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </CardContent>
                 </Card>
@@ -2802,159 +2402,33 @@ export default function AdminDashboard() {
 
       {/* KYC Document View Dialog */}
       <Dialog open={kycViewDialog} onOpenChange={setKycViewDialog}>
-        <DialogContent className="max-w-2xl">         <DialogHeader>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
             <DialogTitle>KYC Document Details</DialogTitle>
             <DialogDescription>
               Review the submitted KYC document information
             </DialogDescription>
           </DialogHeader>
-
+          
           {selectedKycDocument && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground">Account Information</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground">User Information</h4>
                   <p><strong>User ID:</strong> {selectedKycDocument.userId}</p>
                   <p><strong>Full Name:</strong> {selectedKycDocument.user?.fullName || 'N/A'}</p>
                   <p><strong>Email:</strong> {selectedKycDocument.user?.email || 'N/A'}</p>
                 </div>
-
+                
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">Document Information</h4>
-                  <p><strong>Document Type:</strong> {selectedKycDocument.documentType?.replace('_', ' ').toUpperCase() || 'N/A'}</p>
+                  <p><strong>Document Type:</strong> {selectedKycDocument.documentType}</p>
                   <p><strong>Document Number:</strong> {selectedKycDocument.documentNumber}</p>
                   <p><strong>Expiry Date:</strong> {selectedKycDocument.expiryDate || 'N/A'}</p>
                   <p><strong>Submitted:</strong> {new Date(selectedKycDocument.submittedAt).toLocaleDateString()}</p>
                 </div>
               </div>
-
-              {/* Document Images Section */}
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground mb-3">📄 Uploaded Documents</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Front Document */}
-                  {selectedKycDocument.frontImageUrl && (
-                    <div className="border rounded-lg p-3 bg-muted/30">
-                      <p className="font-medium mb-2">Front of Document</p>
-                      <div className="space-y-2">
-                        <img 
-                          src={selectedKycDocument.frontImageUrl} 
-                          alt="Front of document" 
-                          className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => window.open(selectedKycDocument.frontImageUrl, '_blank')}
-                        />
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => window.open(selectedKycDocument.frontImageUrl, '_blank')}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Full Size
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = selectedKycDocument.frontImageUrl!;
-                              link.download = `kyc-front-${selectedKycDocument.userId}.jpg`;
-                              link.click();
-                            }}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Back Document */}
-                  {selectedKycDocument.backImageUrl && (
-                    <div className="border rounded-lg p-3 bg-muted/30">
-                      <p className="font-medium mb-2">Back of Document</p>
-                      <div className="space-y-2">
-                        <img 
-                          src={selectedKycDocument.backImageUrl} 
-                          alt="Back of document" 
-                          className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => window.open(selectedKycDocument.backImageUrl, '_blank')}
-                        />
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => window.open(selectedKycDocument.backImageUrl, '_blank')}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Full Size
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = selectedKycDocument.backImageUrl!;
-                              link.download = `kyc-back-${selectedKycDocument.userId}.jpg`;
-                              link.click();
-                            }}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Selfie */}
-                  {selectedKycDocument.selfieImageUrl && (
-                    <div className="border rounded-lg p-3 bg-muted/30">
-                      <p className="font-medium mb-2">Selfie with Document</p>
-                      <div className="space-y-2">
-                        <img 
-                          src={selectedKycDocument.selfieImageUrl} 
-                          alt="Selfie with document" 
-                          className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => window.open(selectedKycDocument.selfieImageUrl, '_blank')}
-                        />
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => window.open(selectedKycDocument.selfieImageUrl, '_blank')}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Full Size
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = selectedKycDocument.selfieImageUrl!;
-                              link.download = `kyc-selfie-${selectedKycDocument.userId}.jpg`;
-                              link.click();
-                            }}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* If no images available */}
-                  {!selectedKycDocument.frontImageUrl && !selectedKycDocument.backImageUrl && !selectedKycDocument.selfieImageUrl && (
-                    <div className="col-span-2 border rounded-lg p-4 bg-yellow-50 border-yellow-200">
-                      <p className="text-sm text-yellow-800">⚠️ No document images available for review</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
+              
               <div>
                 <h4 className="font-medium text-sm text-muted-foreground mb-2">Current Status</h4>
                 <Badge variant={selectedKycDocument.verificationStatus === 'verified' ? 'default' :
@@ -2962,22 +2436,19 @@ export default function AdminDashboard() {
                   {selectedKycDocument.verificationStatus}
                 </Badge>
                 {selectedKycDocument.rejectionReason && (
-                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
-                    <p className="text-sm text-red-600">
-                      <strong>❌ Rejection Reason:</strong> {selectedKycDocument.rejectionReason}
-                    </p>
-                  </div>
+                  <p className="mt-2 text-sm text-red-600">
+                    <strong>Rejection Reason:</strong> {selectedKycDocument.rejectionReason}
+                  </p>
                 )}
               </div>
-
-              <div className="flex gap-3 pt-4 border-t">
+              
+              <div className="flex gap-3 pt-4">
                 <Button
                   onClick={() => {
                     updateKycStatus(selectedKycDocument.id, 'verified');
                     setKycViewDialog(false);
                   }}
                   variant="default"
-                  disabled={selectedKycDocument.verificationStatus === 'verified'}
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
                   Approve
@@ -2991,7 +2462,6 @@ export default function AdminDashboard() {
                       setKycViewDialog(false);
                     }
                   }}
-                  disabled={selectedKycDocument.verificationStatus === 'rejected'}
                 >
                   <XCircle className="h-4 w-4 mr-1" />
                   Reject
@@ -3011,7 +2481,7 @@ export default function AdminDashboard() {
               Complete user information and account details
             </DialogDescription>
           </DialogHeader>
-
+          
           {selectedUser && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -3023,7 +2493,7 @@ export default function AdminDashboard() {
                   <p><strong>Email:</strong> {selectedUser.email}</p>
                   <p><strong>Role:</strong> {selectedUser.role}</p>
                 </div>
-
+                
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">Account Status</h4>
                   <p><strong>Balance:</strong> ${selectedUser.balance}</p>
@@ -3032,7 +2502,7 @@ export default function AdminDashboard() {
                   <p><strong>Created:</strong> {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
-
+              
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={() => {
@@ -3058,7 +2528,7 @@ export default function AdminDashboard() {
               Perform actions on {selectedUsers.length} selected users
             </DialogDescription>
           </DialogHeader>
-
+          
           <div className="space-y-4">
             <div>
               <Label htmlFor="bulk-action">Select Action</Label>
@@ -3076,7 +2546,7 @@ export default function AdminDashboard() {
               </Select>
             </div>
           </div>
-
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkActionDialog(false)}>
               Cancel

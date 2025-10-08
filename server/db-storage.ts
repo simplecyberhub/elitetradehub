@@ -5,13 +5,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 import {
   users, assets, traders, copyRelationships, trades,
-  investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings, notifications,
+  investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings,
   type User, type InsertUser, type Asset, type InsertAsset,
   type Trader, type InsertTrader, type CopyRelationship, type InsertCopyRelationship,
   type Trade, type InsertTrade, type InvestmentPlan, type InsertInvestmentPlan,
   type Investment, type InsertInvestment, type Transaction, type InsertTransaction,
   type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem,
-  type Setting, type InsertSetting, type Notification, type InsertNotification as NewNotification
+  type Setting, type InsertSetting
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -33,7 +33,7 @@ export class DbStorage implements IStorage {
     this.db = drizzle(this.client, {
       schema: {
         users, assets, traders, copyRelationships, trades,
-        investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings, notifications
+        investmentPlans, investments, transactions, kycDocuments, watchlistItems, settings
       }
     });
   }
@@ -691,58 +691,6 @@ export class DbStorage implements IStorage {
     }
   }
 
-  // User preferences operations
-  async getUserPreferences(userId: number): Promise<any | null> {
-    try {
-      const preferences = await this.db.select().from(settings)
-        .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, `user_${userId}`)));
-
-      if (preferences.length > 0) {
-        return JSON.parse(preferences[0].value);
-      }
-      return null;
-    } catch (error) {
-      console.error('Get user preferences error:', error);
-      return null;
-    }
-  }
-
-  async updateUserPreferences(userId: number, preferences: any): Promise<any> {
-    try {
-      const key = `user_${userId}`;
-      const value = JSON.stringify(preferences);
-
-      // Try to update existing preferences
-      const existing = await this.db.select().from(settings)
-        .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, key)));
-
-      if (existing.length > 0) {
-        // Update existing
-        const currentPrefs = JSON.parse(existing[0].value);
-        const updatedPrefs = { ...currentPrefs, ...preferences };
-
-        await this.db.update(settings)
-          .set({ value: JSON.stringify(updatedPrefs), updatedAt: new Date() })
-          .where(and(eq(settings.category, 'user_preferences'), eq(settings.key, key)));
-
-        return updatedPrefs;
-      } else {
-        // Create new preferences
-        const [newPref] = await this.db.insert(settings).values({
-          category: 'user_preferences',
-          key,
-          value,
-          description: `User preferences for user ${userId}`
-        }).returning();
-
-        return JSON.parse(newPref.value);
-      }
-    } catch (error) {
-      console.error('Update user preferences error:', error);
-      throw error;
-    }
-  }
-
   // Admin stats
   async getAdminStats() {
     const totalUsers = await this.db.select().from(users);
@@ -756,53 +704,5 @@ export class DbStorage implements IStorage {
       totalInvestments: totalInvestments.length,
       pendingKyc: pendingKyc.length
     };
-  }
-
-  // Notification operations
-  async createNotification(notification: NewNotification): Promise<Notification> {
-    try {
-      const [newNotification] = await this.db
-        .insert(notifications)
-        .values(notification)
-        .returning();
-      return newNotification;
-    } catch (error) {
-      console.error("Error creating notification:", error);
-      throw error;
-    }
-  }
-
-  async getNotificationsByUserId(userId: number): Promise<Notification[]> {
-    try {
-      return await this.db
-        .select()
-        .from(notifications)
-        .where(eq(notifications.userId, userId))
-        .orderBy(desc(notifications.createdAt));
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      return [];
-    }
-  }
-
-  async getNotification(id: number): Promise<Notification | undefined> {
-    const result = await this.db.select().from(notifications).where(eq(notifications.id, id)).limit(1);
-    return result[0];
-  }
-
-  async updateNotification(id: number, data: Partial<Notification>): Promise<Notification | undefined> {
-    const result = await this.db.update(notifications).set(data).where(eq(notifications.id, id)).returning();
-    return result[0];
-  }
-
-  async deleteNotification(id: number): Promise<boolean> {
-    const result = await this.db.delete(notifications).where(eq(notifications.id, id));
-    return result.rowCount > 0;
-  }
-
-  async markAllNotificationsAsRead(userId: number): Promise<void> {
-    await this.db.update(notifications)
-      .set({ read: true })
-      .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
   }
 }

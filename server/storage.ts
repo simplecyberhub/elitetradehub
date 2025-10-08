@@ -5,8 +5,7 @@ import {
   type Trader, type InsertTrader, type CopyRelationship, type InsertCopyRelationship,
   type Trade, type InsertTrade, type InvestmentPlan, type InsertInvestmentPlan,
   type Investment, type InsertInvestment, type Transaction, type InsertTransaction,
-  type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem,
-  type Notification, type InsertNotification
+  type KycDocument, type InsertKycDocument, type WatchlistItem, type InsertWatchlistItem
 } from "@shared/schema";
 import { DbStorage } from "./db-storage";
 
@@ -81,14 +80,6 @@ export interface IStorage {
   getWatchlistItemsByUserId(userId: number): Promise<WatchlistItem[]>;
   createWatchlistItem(item: InsertWatchlistItem): Promise<WatchlistItem>;
   deleteWatchlistItem(id: number): Promise<boolean>;
-
-  // Notification operations
-  getNotification(id: number): Promise<Notification | undefined>;
-  getNotificationsByUserId(userId: number): Promise<Notification[]>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  updateNotification(id: number, data: Partial<Notification>): Promise<Notification | undefined>;
-  deleteNotification(id: number): Promise<boolean>;
-  markAllNotificationsAsRead(userId: number): Promise<void>;
 
   // Admin operations
   getAllUsers(): Promise<User[]>;
