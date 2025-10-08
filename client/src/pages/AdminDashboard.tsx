@@ -142,12 +142,12 @@ export default function AdminDashboard() {
     email: {
       smtp_host: 'smtp.gmail.com',
       smtp_port: '587',
-      from_email: 'noreply@elitestock.com'
+      from_email: 'noreply@tfxc.com'
     },
     platform: {
-      platform_name: 'EliteStock Trading',
-      company_name: 'EliteStock Inc.',
-      support_email: 'support@elitestock.com',
+      platform_name: 'TFXC',
+      company_name: 'TFXC Inc.',
+      support_email: 'support@tfxc.com',
       company_address: '',
       platform_logo_url: ''
     }
@@ -687,7 +687,7 @@ export default function AdminDashboard() {
       email: {
         smtp_host: 'smtp.gmail.com',
         smtp_port: '587',
-        from_email: 'noreply@elitestock.com'
+        from_email: 'noreply@tfxc.com'
       }
     });
 
@@ -1929,7 +1929,7 @@ export default function AdminDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">From Email</label>
                       <Input
-                        value={systemSettings.email?.from_email || 'noreply@elitestock.com'}
+                        value={systemSettings.email?.from_email || 'noreply@tfxc.com'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
                           email: { ...prev.email, from_email: e.target.value }
@@ -1939,7 +1939,7 @@ export default function AdminDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">From Name</label>
                       <Input
-                        value={systemSettings.email?.from_name || 'EliteStock Trading'}
+                        value={systemSettings.email?.from_name || 'TFXC'}
                         onChange={(e) => setSystemSettings(prev => ({
                           ...prev,
                           email: { ...prev.email, from_name: e.target.value }
@@ -2034,7 +2034,7 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-primary">Platform Name</label>
                           <Input
-                            value={systemSettings.platform?.platform_name || 'EliteStock Trading'}
+                            value={systemSettings.platform?.platform_name || 'TFXC'}
                             onChange={(e) => setSystemSettings((prev: any) => ({
                               ...prev,
                               platform: { ...prev.platform, platform_name: e.target.value }
@@ -2045,7 +2045,7 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-primary">Company Name</label>
                           <Input
-                            value={systemSettings.platform?.company_name || 'EliteStock Inc.'}
+                            value={systemSettings.platform?.company_name || 'TFXC Inc.'}
                             onChange={(e) => setSystemSettings((prev: any) => ({
                               ...prev,
                               platform: { ...prev.platform, company_name: e.target.value }
@@ -2056,7 +2056,7 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-primary">Support Email</label>
                           <Input
-                            value={systemSettings.platform?.support_email || 'support@elitestock.com'}
+                            value={systemSettings.platform?.support_email || 'support@tfxc.com'}
                             onChange={(e) => setSystemSettings((prev: any) => ({
                               ...prev,
                               platform: { ...prev.platform, support_email: e.target.value }
@@ -2093,7 +2093,7 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-primary">Welcome Email Subject</label>
                           <Input
-                            value={systemSettings.templates?.welcome_subject || 'Welcome to EliteStock Trading!'}
+                            value={systemSettings.templates?.welcome_subject || 'Welcome to TFXC!'}
                             onChange={(e) => setSystemSettings(prev => ({
                               ...prev,
                               templates: { ...prev.templates, welcome_subject: e.target.value }
@@ -2105,7 +2105,7 @@ export default function AdminDashboard() {
                           <label className="text-sm font-medium text-primary">Welcome Email Content</label>
                           <textarea
                             className="w-full h-32 p-3 border border-primary rounded-md bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary text-foreground"
-                            value={systemSettings.templates?.welcome_content || 'Welcome to EliteStock Trading Platform! Your account has been created successfully.'}
+                            value={systemSettings.templates?.welcome_content || 'Welcome to TFXC Trading Platform! Your account has been created successfully.'}
                             onChange={(e) => setSystemSettings(prev => ({
                               ...prev,
                               templates: { ...prev.templates, welcome_content: e.target.value }
@@ -2118,7 +2118,7 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Transaction Email Subject</label>
                           <Input
-                            value={systemSettings.templates?.transaction_subject || 'Transaction Update - EliteStock'}
+                            value={systemSettings.templates?.transaction_subject || 'Transaction Update - TFXC'}
                             onChange={(e) => setSystemSettings(prev => ({
                               ...prev,
                               templates: { ...prev.templates, transaction_subject: e.target.value }

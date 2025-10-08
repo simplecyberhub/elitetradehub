@@ -155,7 +155,7 @@ INSERT INTO "settings" ("key", "value", "description", "category") VALUES
 ('trading_fee_percentage', '0.1', 'Trading fee percentage', 'trading'),
 ('smtp_host', 'smtp.gmail.com', 'SMTP server host', 'email'),
 ('smtp_port', '587', 'SMTP server port', 'email'),
-('from_email', 'noreply@elitestock.com', 'From email address', 'email');
+('from_email', 'noreply@tfxc.com', 'From email address', 'email');
 
 -- Sessions table for express-session
 CREATE TABLE IF NOT EXISTS "session" (

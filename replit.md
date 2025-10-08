@@ -1,6 +1,6 @@
 # Overview
 
-EliteStock Trading Platform is a full-stack web application that provides a comprehensive trading and investment platform. It features real-time market data, copy trading functionality, investment plans, KYC verification, and portfolio management. The application follows a modern client-server architecture with a React frontend and Express.js backend.
+TFXC Trading Platform is a full-stack web application that provides a comprehensive trading and investment platform. It features real-time market data, copy trading functionality, investment plans, KYC verification, and portfolio management. The application follows a modern client-server architecture with a React frontend and Express.js backend.
 
 # User Preferences
 

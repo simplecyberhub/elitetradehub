@@ -56,7 +56,7 @@ async function sendEmailWithSendGrid(params: EmailParams): Promise<boolean> {
       to: params.to,
       from: {
         email: fromEmail,
-        name: "EliteStock Trading Platform",
+        name: "TFXC Trading Platform",
       },
       subject: params.subject,
     };
@@ -128,7 +128,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
 }
 
 // Professional email template wrapper
-const getEmailTemplate = (title: string, content: string, platformName: string = "EliteStock Trading") => {
+const getEmailTemplate = (title: string, content: string, platformName: string = "TFXC") => {
   return `
     <!DOCTYPE html>
     <html>
@@ -170,7 +170,7 @@ const getEmailTemplate = (title: string, content: string, platformName: string =
 
 // Email templates
 export const emailTemplates = {
-  welcomeEmail: (username: string, platformName: string = "EliteStock Trading") => ({
+  welcomeEmail: (username: string, platformName: string = "TFXC") => ({
     subject: `Welcome to ${platformName}!`,
     text: `Welcome ${username}! Your account has been created successfully.`,
     html: getEmailTemplate(
@@ -182,7 +182,7 @@ export const emailTemplates = {
     ),
   }),
 
-  depositConfirmation: (amount: string, currency: string, platformName: string = "EliteStock Trading") => ({
+  depositConfirmation: (amount: string, currency: string, platformName: string = "TFXC") => ({
     subject: "Deposit Confirmation",
     text: `Your deposit of ${amount} ${currency} has been confirmed.`,
     html: getEmailTemplate(
@@ -194,7 +194,7 @@ export const emailTemplates = {
     ),
   }),
 
-  withdrawalRequest: (amount: string, currency: string, platformName: string = "EliteStock Trading") => ({
+  withdrawalRequest: (amount: string, currency: string, platformName: string = "TFXC") => ({
     subject: "Withdrawal Request Received",
     text: `Your withdrawal request for ${amount} ${currency} has been received and is being processed.`,
     html: getEmailTemplate(
@@ -206,7 +206,7 @@ export const emailTemplates = {
     ),
   }),
 
-  kycStatusUpdate: (status: string, platformName: string = "EliteStock Trading") => ({
+  kycStatusUpdate: (status: string, platformName: string = "TFXC") => ({
     subject: `KYC Verification ${status === "verified" ? "Approved" : status === "rejected" ? "Rejected" : "Update"}`,
     text: `Your KYC verification status has been updated to: ${status}. ${status === "verified" ? "You can now access all platform features." : status === "rejected" ? "Please resubmit your documents with correct information." : ""}`,
     html: getEmailTemplate(

@@ -2,7 +2,7 @@
 
 ## Overview
 
-EliteStock Trading Platform is a full-stack web application that provides a comprehensive trading and investment platform. It follows a client-server architecture with a React frontend and an Express.js backend, using PostgreSQL for data storage via NeonDB's serverless offering. The application supports features such as market trading, copy trading, investment plans, and user account management.
+TFXC Trading Platform is a full-stack web application that provides a comprehensive trading and investment platform. It follows a client-server architecture with a React frontend and an Express.js backend, using PostgreSQL for data storage via NeonDB's serverless offering. The application supports features such as market trading, copy trading, investment plans, and user account management.
 
 ## System Architecture
 

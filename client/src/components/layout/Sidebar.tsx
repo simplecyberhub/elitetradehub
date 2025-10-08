@@ -63,7 +63,7 @@ export default function Sidebar() {
       )}>
         <div className="flex flex-col h-full">
           <div className="p-6">
-            <h1 className="text-xl font-bold text-white">EliteStock</h1>
+            <h1 className="text-xl font-bold text-white">TFXC</h1>
           </div>
 
           <nav className="flex-1 px-4 pb-4">

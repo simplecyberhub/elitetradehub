@@ -46,7 +46,7 @@ function LoginForm() {
   return (
     <div className="w-full max-w-md mx-auto bg-neutral-800 rounded-lg p-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">📈 EliteStock</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">📈 TFXC</h2>
         <p className="text-neutral-400">
           {isRegistering ? "Create your account" : "Log in to your account"}
         </p>
