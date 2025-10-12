@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Markets", href: "/markets", icon: TrendingUp },
+  // { name: "Markets", href: "/markets", icon: TrendingUp },
   { name: "Copy Trading", href: "/copy-trading", icon: Users },
   { name: "Investments", href: "/investments", icon: PiggyBank },
   { name: "Deposit", href: "/deposit", icon: CreditCard },
