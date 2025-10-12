@@ -42,9 +42,9 @@ const Dashboard = () => {
 
         {/* Recent Trades & Copy Trading */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
-            <RecentTrades />
-          </div>
+          <!--div className="lg:col-span-2">
+         // <RecentTrades />
+          </div-->
           <div>
             <CopyTrading />
           </div>
