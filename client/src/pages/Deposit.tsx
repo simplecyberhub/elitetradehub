@@ -9,11 +9,11 @@ import { WalletIcon, BitcoinIcon, CurrencyIcon } from "@/components/ui/icons";
 const Deposit = () => {
   const { user } = useAuth();
   const [location] = useLocation();
-  const [activeTab, setActiveTab] = useState("card");
+  const [activeTab, setActiveTab] = useState("crypto");
   
   // Payment method icons with labels
   const paymentMethods = [
-    {
+    {/*
       id: "card",
       label: "Credit/Debit Card",
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -26,7 +26,7 @@ const Deposit = () => {
       label: "Bank Transfer",
       icon: <WalletIcon className="h-6 w-6" />,
       description: "1-3 business days with no fee"
-    },
+    */},
     {
       id: "crypto",
       label: "Cryptocurrency",
@@ -70,8 +70,8 @@ const Deposit = () => {
   return (
     <>
       <Helmet>
-        <title>Deposit Funds | EliteStock Trading Platform</title>
-        <meta name="description" content="Deposit funds to your EliteStock trading account using credit card, bank transfer, cryptocurrency, or PayPal." />
+        <title>Deposit Funds | TFXC Trading Platform</title>
+        <meta name="description" content="Deposit funds to your TFXC trading account using cryptocurrency, or PayPal." />
       </Helmet>
       
       <div>
@@ -116,14 +116,9 @@ const Deposit = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
-                  <span>Funds will be available immediately for credit card and cryptocurrency deposits.</span>
+                  <span>Funds will be available immediately after approval for cryptocurrency deposits.</span>
                 </li>
-                <li className="flex items-start">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <span>Bank transfers may take 1-3 business days to process.</span>
-                </li>
+                
                 <li className="flex items-start">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
