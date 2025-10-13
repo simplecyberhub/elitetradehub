@@ -235,8 +235,8 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
                 </div>
               </FormControl>
               <FormDescription>
-                {method === "credit_card" && "Credit card deposits have a 1.5% fee."}
-                {method === "bank_transfer" && "Bank transfers have no fee."}
+               // {method === "credit_card" && "Credit card deposits have a 1.5% fee."}
+               // {method === "bank_transfer" && "Bank transfers have no fee."}
                 {method === "crypto" && "Crypto deposits have no fee."}
                 {method === "paypal" && "PayPal deposits have a 2.5% fee."}
               </FormDescription>
