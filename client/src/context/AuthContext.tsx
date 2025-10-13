@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
         toast({
           title: "Registration successful",
-          description: "Welcome to EliteStock!",
+          description: "Welcome to TFXC!",
         });
       } else {
         const errorData = await response.json();

@@ -130,8 +130,8 @@ const Profile = () => {
   return (
     <>
       <Helmet>
-        <title>My Profile | EliteStock Trading Platform</title>
-        <meta name="description" content="Manage your profile settings and account information on EliteStock Trading Platform." />
+        <title>My Profile | TFXC Trading Platform</title>
+        <meta name="description" content="Manage your profile settings and account information on TFXC Trading Platform." />
       </Helmet>
       
       <div>

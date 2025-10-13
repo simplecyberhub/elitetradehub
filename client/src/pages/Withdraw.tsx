@@ -9,16 +9,16 @@ import { WalletIcon, BitcoinIcon, CurrencyIcon } from "@/components/ui/icons";
 const Withdraw = () => {
   const { user } = useAuth();
   const [location] = useLocation();
-  const [activeTab, setActiveTab] = useState("bank");
+  const [activeTab, setActiveTab] = useState("crypto");
   
   // Payment method tabs
   const paymentMethods = [
-    {
+    /*{
       id: "bank",
       label: "Bank Transfer",
       icon: <WalletIcon className="h-6 w-6" />,
       description: "1-3 business days with no fee for transfers over $1,000"
-    },
+    },*/
     {
       id: "crypto",
       label: "Cryptocurrency",
@@ -38,8 +38,8 @@ const Withdraw = () => {
   return (
     <>
       <Helmet>
-        <title>Withdraw Funds | EliteStock Trading Platform</title>
-        <meta name="description" content="Withdraw funds from your EliteStock trading account to your bank account, cryptocurrency wallet, or PayPal." />
+        <title>Withdraw Funds | TFXC Trading Platform</title>
+        <meta name="description" content="Withdraw funds from your TFXC trading account to your cryptocurrency wallet, or PayPal account." />
       </Helmet>
       
       <div>
@@ -80,12 +80,6 @@ const Withdraw = () => {
             <div className="mt-6 p-4 bg-neutral-900 rounded-lg">
               <h3 className="font-medium mb-2">Withdrawal Information</h3>
               <ul className="space-y-2 text-sm text-neutral-300">
-                <li className="flex items-start">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <span>Bank transfers typically take 1-3 business days to process.</span>
-                </li>
                 <li className="flex items-start">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />

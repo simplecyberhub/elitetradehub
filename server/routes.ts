@@ -577,7 +577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const { sendEmail } = await import("./email");
             await sendEmail({
               to: user.email,
-              from: "TFXC <info@asspirewealth.ltd>",
+              from: "TFXC <care@trust-corp.online>",
               subject: subject,
               html: `<h2>${subject}</h2><p>${message}</p>`,
             });
@@ -714,7 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           groupedSettings.email = {
             smtp_host: "smtp.gmail.com",
             smtp_port: "587",
-            from_email: "TFXC <info@asspirewealth.ltd>",
+            from_email: "TFXC <care@trust-corp.online>",
           };
         }
 

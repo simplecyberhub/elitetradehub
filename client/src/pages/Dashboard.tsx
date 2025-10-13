@@ -52,9 +52,7 @@ const Dashboard = () => {
           <div className="lg:col-span-2">
             <InvestmentPlans />
           </div>
-          <div>
-            <DepositMethods />
-          </div>
+         
         </div>
 
         {/* Quick Links */}

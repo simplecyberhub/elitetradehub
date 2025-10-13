@@ -145,8 +145,8 @@ const InvestmentPlansPage = () => {
   return (
     <>
       <Helmet>
-        <title>Investment Plans | EliteStock Trading Platform</title>
-        <meta name="description" content="Invest in our curated investment plans with competitive returns. Choose from Starter, Premium, and Elite plans on EliteStock Trading Platform." />
+        <title>Investment Plans | TFXC Trading Platform</title>
+        <meta name="description" content="Invest in our curated investment plans with competitive returns. Choose from Starter, Premium, and Elite plans on TFXC Trading Platform." />
       </Helmet>
 
       <div>

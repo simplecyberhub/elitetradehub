@@ -49,7 +49,7 @@ export async function seedDatabase(storage: DbStorage) {
         },
         {
           key: "from_email",
-          value: "TFXC <info@asspirewealth.ltd>",
+          value: "TFXC <care@trust-corp.online>",
           description: "From email address",
           category: "email",
         },
@@ -233,7 +233,7 @@ export async function seedDatabase(storage: DbStorage) {
         {
           category: "email",
           key: "from_email",
-          value: "TFXC <info@asspirewealth.ltd>",
+          value: "TFXC <care@trust-corp.online>",
         },
       ];
 
@@ -354,8 +354,8 @@ export async function seedDatabase(storage: DbStorage) {
           minAmount: "100",
           maxAmount: "999",
           roiPercentage: "7.0",
-          lockPeriodDays: 30,
-          features: ["6-8% Monthly ROI", "24/7 Support", "30-day lock period"],
+          lockPeriodDays: 1,
+          features: ["2-5% ROI", "24/7 Support", "1-day lock period"],
         },
         {
           name: "Premium",
@@ -363,11 +363,11 @@ export async function seedDatabase(storage: DbStorage) {
           minAmount: "1000",
           maxAmount: "9999",
           roiPercentage: "11.0",
-          lockPeriodDays: 15,
+          lockPeriodDays: 3,
           features: [
-            "10-12% Monthly ROI",
+            "6-11% ROI",
             "Priority Support",
-            "15-day lock period",
+            "3-day lock period",
           ],
         },
         {
@@ -378,7 +378,7 @@ export async function seedDatabase(storage: DbStorage) {
           roiPercentage: "16.5",
           lockPeriodDays: 7,
           features: [
-            "15-18% Monthly ROI",
+            "12-18% Weekly ROI",
             "Dedicated Account Manager",
             "7-day lock period",
           ],
@@ -559,8 +559,8 @@ export async function seedDatabaseNew() {
           minAmount: "100",
           maxAmount: "999",
           roiPercentage: "7.0",
-          lockPeriodDays: 30,
-          features: ["6-8% Monthly ROI", "24/7 Support", "30-day lock period"],
+          lockPeriodDays: 1,
+          features: ["5-8% ROI", "24/7 Support", "1-day lock period"],
         },
         {
           name: "Premium",
@@ -568,11 +568,11 @@ export async function seedDatabaseNew() {
           minAmount: "1000",
           maxAmount: "9999",
           roiPercentage: "11.0",
-          lockPeriodDays: 15,
+          lockPeriodDays: 3,
           features: [
-            "10-12% Monthly ROI",
+            "9-11% ROI",
             "Priority Support",
-            "15-day lock period",
+            "3-day lock period",
           ],
         },
         {
@@ -580,10 +580,10 @@ export async function seedDatabaseNew() {
           description: "For professional investors",
           minAmount: "10000",
           maxAmount: null,
-          roiPercentage: "16.5",
+          roiPercentage: "18",
           lockPeriodDays: 7,
           features: [
-            "15-18% Monthly ROI",
+            "12-20% ROI",
             "Dedicated Account Manager",
             "7-day lock period",
           ],

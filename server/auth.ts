@@ -94,7 +94,7 @@ export async function sendWelcomeEmail(
     const template = emailTemplates.welcomeEmail(username);
     const emailSent = await sendEmail({
       to: email,
-      from: "TFXC <info@asspirewealth.ltd>", // Replace with verified sender
+      from: "TFXC <care@trust-corp.online>", // Replace with verified sender
       subject: template.subject,
       text: template.text,
       html: template.html,
@@ -122,7 +122,7 @@ export async function sendTransactionEmail(
 
     const emailSent = await sendEmail({
       to: email,
-      from: "TFXC <info@asspirewealth.ltd>", // Replace with verified sender
+      from: "TFXC <care@trust-corp.online>", // Replace with verified sender
       subject: template.subject,
       text: template.text,
       html: template.html,
@@ -145,7 +145,7 @@ export async function sendKycStatusEmail(
     const template = emailTemplates.kycStatusUpdate(status);
     await sendEmail({
       to: email,
-      from: "TFXC <info@asspirewealth.ltd>", // Replace with verified sender
+      from: "TFXC <care@trust-corp.online>", // Replace with verified sender
       subject: template.subject,
       text: template.text,
       html: template.html,

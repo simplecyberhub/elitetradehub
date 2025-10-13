@@ -188,8 +188,8 @@ const CopyTradingPage = () => {
   return (
     <>
       <Helmet>
-        <title>Copy Trading | EliteStock Trading Platform</title>
-        <meta name="description" content="Copy successful traders and automatically replicate their trading strategies on EliteStock Trading Platform." />
+        <title>Copy Trading | TFXC Trading Platform</title>
+        <meta name="description" content="Copy successful traders and automatically replicate their trading strategies on TFXC Trading Platform." />
       </Helmet>
 
       <div>

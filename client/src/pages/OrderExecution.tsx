@@ -61,8 +61,8 @@ const OrderExecution = () => {
   return (
     <>
       <Helmet>
-        <title>Trade {asset.name} | EliteStock Trading Platform</title>
-        <meta name="description" content={`Execute trades for ${asset.name} (${asset.symbol}) on EliteStock Trading Platform. View real-time price and place orders.`} />
+        <title>Trade {asset.name} | TFXC Trading Platform</title>
+        <meta name="description" content={`Execute trades for ${asset.name} (${asset.symbol}) on TFXC Trading Platform. View real-time price and place orders.`} />
       </Helmet>
 
       <div>

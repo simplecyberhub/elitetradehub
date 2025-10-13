@@ -779,7 +779,7 @@ export default function AdminDashboard() {
     try {
       await apiRequest("POST", `/api/admin/bulk-email`, {
         subject: "Platform Update",
-        message: "Important update from EliteStock Trading Platform"
+        message: "Important update from TFXC Trading Platform"
       }, {
         'X-User-Id': user.id.toString(),
         'X-User-Role': user.role
