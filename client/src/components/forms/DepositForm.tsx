@@ -45,8 +45,7 @@ const depositFormSchema = z.object({
 type DepositFormValues = z.infer<typeof depositFormSchema>;
 
 interface DepositFormProps {
-  method: "crypto" | "paypal";
- // method: "credit_card" | "bank_transfer" | "crypto" | "paypal";
+  method: "credit_card" | "bank_transfer" | "crypto" | "paypal";
 }
 
 const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
@@ -235,8 +234,8 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
                 </div>
               </FormControl>
               <FormDescription>
-               // {method === "credit_card" && "Credit card deposits have a 1.5% fee."}
-               // {method === "bank_transfer" && "Bank transfers have no fee."}
+                {method === "credit_card" && "Credit card deposits have a 1.5% fee."}
+                {method === "bank_transfer" && "Bank transfers have no fee."}
                 {method === "crypto" && "Crypto deposits have no fee."}
                 {method === "paypal" && "PayPal deposits have a 2.5% fee."}
               </FormDescription>
@@ -244,6 +243,84 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
             </FormItem>
           )}
         />
+
+        {method === "credit_card" && (
+          <>
+            <FormField
+              control={form.control}
+              name="cardNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Card Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="1234 5678 9012 3456"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="cardName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cardholder Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="John Smith"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <FormField
+                  control={form.control}
+                  name="expiryDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Expiry Date</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="MM/YY"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cvv"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CVV</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="123"
+                          maxLength={4}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         {method === "bank_transfer" && (
           <>
@@ -331,7 +408,7 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
                     </div>
                   </div>
                   <p className="text-xs text-center text-neutral-400">
-                    Scan QR code or copy the address to send BTC
+                    Scan QR code or copy address to send BTC
                   </p>
                 </div>
 
