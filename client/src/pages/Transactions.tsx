@@ -122,7 +122,7 @@ const Transactions = () => {
   };
   
   // Helper to get icon for transaction type
-  const getTransactionIcon = (type: string) => {
+  const getTransactionIcon = (type: string, subType?: string) => {
     if (type === "investment") {
       return (
         <div className="h-9 w-9 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center">
@@ -197,8 +197,8 @@ const Transactions = () => {
   return (
     <>
       <Helmet>
-        <title>Transaction History | EliteStock Trading Platform</title>
-        <meta name="description" content="View your complete transaction history including deposits, withdrawals, and trades on EliteStock Trading Platform." />
+        <title>Transaction History | TFXC</title>
+        <meta name="description" content="View your complete transaction history including deposits, withdrawals, and trades on TFXC." />
       </Helmet>
       
       <div>
@@ -258,7 +258,7 @@ const Transactions = () => {
                               key={transaction.id}
                               className="flex items-center gap-4 bg-neutral-900 p-3 rounded-lg"
                             >
-                              {getTransactionIcon(transaction.type)}
+                              {getTransactionIcon(transaction.type, transaction.subType)}
                               <div className="flex-grow">
                                 <div className="flex justify-between">
                                   <h4 className="font-medium capitalize">
