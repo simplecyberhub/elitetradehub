@@ -45,7 +45,8 @@ const depositFormSchema = z.object({
 type DepositFormValues = z.infer<typeof depositFormSchema>;
 
 interface DepositFormProps {
-  method: "credit_card" | "bank_transfer" | "crypto" | "paypal";
+  method: "crypto" | "paypal";
+ // method: "credit_card" | "bank_transfer" | "crypto" | "paypal";
 }
 
 const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
@@ -244,84 +245,6 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
           )}
         />
 
-        {method === "credit_card" && (
-          <>
-            <FormField
-              control={form.control}
-              name="cardNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Card Number</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="1234 5678 9012 3456"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="cardName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cardholder Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="John Smith"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-2">
-                <FormField
-                  control={form.control}
-                  name="expiryDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Expiry Date</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="MM/YY"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="cvv"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CVV</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="123"
-                          maxLength={4}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          </>
-        )}
-
         {method === "bank_transfer" && (
           <>
             <FormField
@@ -389,9 +312,9 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
                 <div className="bg-neutral-900 rounded-lg p-4 mb-4">
                   <p className="text-sm text-neutral-400 mb-2">Send Bitcoin to the following address:</p>
                   <div className="flex items-center justify-between bg-neutral-800 p-3 rounded-md mb-4">
-                    <code className="text-sm font-mono">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code>
+                    <code className="text-sm font-mono">bc1pv8w54lt3qnjzasg6kwhefjp8gyl7nv8mqlp2xdzzlmpe9vgdyasscxx8xa</code>
                     <Button variant="outline" size="sm" onClick={() => {
-                      navigator.clipboard.writeText("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+                      navigator.clipboard.writeText("bc1pv8w54lt3qnjzasg6kwhefjp8gyl7nv8mqlp2xdzzlmpe9vgdyasscxx8xa");
                       toast({ title: "Address copied to clipboard" });
                     }}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -434,9 +357,9 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
                 <div className="bg-neutral-900 rounded-lg p-4 mb-4">
                   <p className="text-sm text-neutral-400 mb-2">Send Ethereum to the following address:</p>
                   <div className="flex items-center justify-between bg-neutral-800 p-3 rounded-md mb-4">
-                    <code className="text-sm font-mono">0x742d35Cc6634C0532925a3b844Bc454e4438f44e</code>
+                    <code className="text-sm font-mono">0x7F189076F7A8bc3bE89F77F9a461158918A656b4</code>
                     <Button variant="outline" size="sm" onClick={() => {
-                      navigator.clipboard.writeText("0x742d35Cc6634C0532925a3b844Bc454e4438f44e");
+                      navigator.clipboard.writeText("0x7F189076F7A8bc3bE89F77F9a461158918A656b4");
                       toast({ title: "Address copied to clipboard" });
                     }}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -466,11 +389,11 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
 
               <TabsContent value="usdt" className="py-4">
                 <div className="bg-neutral-900 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-neutral-400 mb-2">Send USDT (ERC-20) to the following address:</p>
+                  <p className="text-sm text-neutral-400 mb-2">Send USDT (BEP-20) to the following address:</p>
                   <div className="flex items-center justify-between bg-neutral-800 p-3 rounded-md mb-4">
-                    <code className="text-sm font-mono">0x742d35Cc6634C0532925a3b844Bc454e4438f44e</code>
+                    <code className="text-sm font-mono">0x7F189076F7A8bc3bE89F77F9a461158918A656b4</code>
                     <Button variant="outline" size="sm" onClick={() => {
-                      navigator.clipboard.writeText("0x742d35Cc6634C0532925a3b844Bc454e4438f44e");
+                      navigator.clipboard.writeText("0x7F189076F7A8bc3bE89F77F9a461158918A656b4");
                       toast({ title: "Address copied to clipboard" });
                     }}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
