@@ -331,7 +331,7 @@ const DepositForm: React.FC<DepositFormProps> = ({ method }) => {
                     </div>
                   </div>
                   <p className="text-xs text-center text-neutral-400">
-                    Scan QR code or copy address to send BTC
+                    Scan QR code or copy the address to send BTC
                   </p>
                 </div>
 
