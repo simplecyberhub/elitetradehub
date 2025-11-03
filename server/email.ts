@@ -22,7 +22,7 @@ let nodemailerTransporter: any = null;
 if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
   nodemailerTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
+    port: parseInt(process.env.SMTP_PORT || "465"),
     secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
@@ -178,7 +178,7 @@ export const emailTemplates = {
       `Welcome, ${username}!`,
       `<p>Your account has been created successfully. You can now access all our trading features.</p>
        <p>Get started by completing your profile and exploring our markets.</p>
-       <a href="${process.env.FRONTEND_URL || 'https://your-platform.com'}" class="button">Get Started</a>`,
+       <a href="${process.env.FRONTEND_URL || 'https://tfxc.onrender.com'}" class="button">Get Started</a>`,
       platformName
     ),
   }),
