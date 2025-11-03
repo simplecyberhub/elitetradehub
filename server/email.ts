@@ -31,6 +31,7 @@ if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
   });
 }
 
+
 interface EmailParams {
   to: string;
   from: string;
