@@ -1,23 +1,23 @@
-import sgMail from "@sendgrid/mail";
+import { Resend } from 'resend';
 import nodemailer from "nodemailer";
+import sgMail from '@sendgrid/mail';
 
-// Initialize SendGrid if available
-let mailService: typeof sgMail | null = null;
-if (
-  process.env.SENDGRID_API_KEY &&
-  process.env.SENDGRID_API_KEY !== "your-sendgrid-api-key" &&
-  process.env.SENDGRID_API_KEY.startsWith("SG.")
-) {
-  mailService = sgMail;
-  mailService.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log("SendGrid initialized successfully");
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
+
+// Initialize Resend if available
+let resendClient: Resend | null = null;
+if (process.env.RESEND_API_KEY) {
+  resendClient = new Resend(process.env.RESEND_API_KEY);
+  console.log("Resend initialized successfully");
 } else {
   console.warn(
-    "SendGrid API key not properly configured - using fallback email service",
+    "Resend API key not configured - checking fallback email services",
   );
 }
 
-// Initialize Nodemailer transporter
+// Initialize Nodemailer transporter as fallback
 let nodemailerTransporter: any = null;
 if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
   nodemailerTransporter = nodemailer.createTransport({
@@ -39,45 +39,45 @@ interface EmailParams {
   html?: string;
 }
 
-async function sendEmailWithSendGrid(params: EmailParams): Promise<boolean> {
+async function sendEmailWithResend(params: EmailParams): Promise<boolean> {
   try {
-    if (!mailService) {
-      console.warn("SendGrid not configured");
+    if (!resendClient) {
+      console.warn("Resend not configured");
       return false;
     }
 
-    // Validate from email format for SendGrid
+    // Validate from email format for Resend
     let fromEmail = params.from;
     if (!fromEmail.includes("@")) {
       fromEmail = "care@trust-corp.online"; // Use a default verified sender
     }
 
-    const emailData: any = {
+    const result: any = await resendClient.emails.send({
       to: params.to,
-      from: {
-        email: fromEmail,
-        name: "TFXC Trading Platform",
-      },
+      from: fromEmail,
       subject: params.subject,
-    };
+      text: params.text,
+      html: params.html,
+    } as any);
 
-    if (params.text) emailData.text = params.text;
-    if (params.html) emailData.html = params.html;
+    if (result?.error) {
+      console.error("Resend email error:", result.error);
+      return false;
+    }
 
-    await mailService.send(emailData);
-    console.log("Email sent successfully via SendGrid to:", params.to);
+    console.log("Email sent successfully with Resend, ID:", result?.id ?? result?.data?.id ?? result?.messageId);
     return true;
   } catch (error: any) {
-    console.error("SendGrid email error:", {
-      message: error.message,
-      code: error.code,
-      response: error.response?.body,
+    console.error("Resend email error:", {
+      message: error?.message,
+      code: error?.code,
+      response: error?.response,
     });
 
-    // Log specific SendGrid errors for debugging
-    if (error.code === 403) {
+    // Log specific errors for debugging
+    if (error?.code === 403) {
       console.error(
-        "SendGrid 403 Error: Check API key permissions and sender verification",
+        "Resend 403 Error: Check API key permissions and sender verification",
       );
     }
 
@@ -110,10 +110,10 @@ async function sendEmailWithNodemailer(params: EmailParams): Promise<boolean> {
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
-  // Try SendGrid first
-  if (mailService) {
-    const sendGridResult = await sendEmailWithSendGrid(params);
-    if (sendGridResult) return true;
+  // Try Resend first
+  if (resendClient) {
+    const resendResult = await sendEmailWithResend(params);
+    if (resendResult) return true;
   }
 
   // Fallback to Nodemailer SMTP
@@ -122,7 +122,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     if (nodemailerResult) return true;
   }
 
-  // If both fail, try a simple fallback method
+  // If both fail, log the error
   console.warn("All email services failed for:", params.to);
   return false;
 }
